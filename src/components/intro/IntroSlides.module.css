@@ -1,0 +1,633 @@
+.intro {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  isolation: isolate;
+}
+
+.intro h1 {
+  font-size: clamp(1.8rem, 1.2rem + 3vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.intro p {
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.2rem);
+  line-height: 1.7;
+  opacity: 0.92;
+  max-width: 640px;
+  margin-bottom: 1.75rem;
+}
+
+/* Text alignment — controlled via config textAlign */
+.alignStart {
+  align-items: flex-start;
+  text-align: start;
+}
+
+.alignCenter {
+  align-items: center;
+  text-align: center;
+}
+
+.alignCenter p,
+.alignCenter .classicDescription {
+  margin-inline: auto;
+}
+
+.alignEnd {
+  align-items: flex-end;
+  text-align: end;
+}
+
+.classicGrid.alignCenter {
+  justify-items: center;
+}
+
+.classicGrid.alignEnd {
+  justify-items: end;
+}
+
+.heroBtns {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ---------- apple_fullscreen ---------- */
+.appleWrapper {
+  position: relative;
+  min-height: clamp(420px, 60vh, 640px);
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.appleWrapper.alignStart {
+  justify-content: flex-start;
+}
+
+.appleWrapper.alignCenter {
+  justify-content: center;
+}
+
+.appleWrapper.alignEnd {
+  justify-content: flex-end;
+}
+
+.appleBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.appleOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.15) 60%, transparent 100%);
+  z-index: -1;
+}
+
+.appleContent {
+  padding: clamp(1.5rem, 4vw, 4rem);
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- minimal_glass ---------- */
+.glassWrapper {
+  position: relative;
+  min-height: clamp(380px, 52vh, 560px);
+  display: flex;
+  align-items: center;
+  padding: 2rem clamp(1.5rem, 4vw, 4rem);
+  overflow: hidden;
+}
+
+.glassWrapper.alignStart {
+  justify-content: flex-start;
+}
+
+.glassWrapper.alignCenter {
+  justify-content: center;
+}
+
+.glassWrapper.alignEnd {
+  justify-content: flex-end;
+}
+
+.blurBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(24px) brightness(0.7);
+  transform: scale(1.1);
+  z-index: -1;
+}
+
+.glassCard {
+  padding: clamp(2rem, 5vw, 3.5rem);
+  max-width: 680px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- full_split ---------- */
+.splitWrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: clamp(420px, 55vh, 580px);
+  min-height: clamp(420px, 55vh, 580px);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle glow behind text side */
+.splitWrapper::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -5%;
+  top: 10%;
+  width: 45%;
+  height: 80%;
+  background: radial-gradient(ellipse at center, var(--primary, #6c5ce7) 0%, transparent 70%);
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+/* Text column */
+.splitText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 4vw, 4rem);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.splitText h1 {
+  font-size: clamp(1.8rem, 1rem + 2.5vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.splitText p {
+  font-size: clamp(0.95rem, 0.85rem + 0.3vw, 1.1rem);
+  line-height: 1.65;
+  opacity: 0.85;
+  max-width: 520px;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Image column */
+.splitVisual {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--surface-2, rgba(0,0,0,0.03));
+}
+
+.splitVisual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.splitVisual img:hover {
+  transform: scale(1.04);
+}
+
+@media (max-width: 768px) {
+  .splitWrapper {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: unset;
+  }
+  /* Image appears on top on mobile */
+  .splitVisual {
+    height: 240px;
+    width: 100%;
+    order: -1;
+  }
+  .splitText {
+    padding: 1.75rem 1.25rem;
+  }
+}
+
+
+
+
+/* ---------- classic_centered (legacy hero: badge, glow, CTA, optional image) ---------- */
+.classicWrapper {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(3rem, 6vw, 6rem) clamp(1.5rem, 4vw, 3rem);
+  min-height: clamp(360px, 50vh, 560px);
+}
+
+.classicHeroGlow {
+  position: absolute;
+  top: -10%;
+  inset-inline-start: 10%;
+  width: 300px;
+  height: 300px;
+  background: var(--primary);
+  opacity: 0.15;
+  filter: blur(120px);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.classicHeroGlowStore {
+  background: var(--secondary);
+  opacity: 0.1;
+}
+
+.classicGrid {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.classicGridWithVisual {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .classicGridWithVisual {
+    grid-template-columns: 1.2fr 1fr;
+  }
+}
+
+.classicContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.classicBadge {
+  background: light-dark(rgba(120, 80, 220, 0.08), rgba(120, 80, 220, 0.2));
+  border: 1px solid var(--border);
+  color: var(--primary);
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.classicBadgeStore {
+  background: light-dark(rgba(240, 80, 180, 0.08), rgba(240, 80, 180, 0.2));
+  color: var(--secondary);
+  text-transform: none;
+}
+
+.classicTitle {
+  font-size: clamp(2.2rem, 1.8rem + 3vw, 4rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.classicTitleGradient {
+  background: linear-gradient(135deg, var(--fg) 40%, var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.classicTitleStore.classicTitleGradient {
+  background: linear-gradient(135deg, var(--fg) 40%, var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.classicDescription {
+  font-size: clamp(1rem, 0.9rem + 0.5vw, 1.25rem);
+  opacity: 0.7;
+  max-width: 640px;
+  margin: 0;
+}
+
+.classicPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.classicOriginalPrice {
+  opacity: 0.45;
+  text-decoration: line-through;
+  font-size: 1.1rem;
+}
+
+.classicActivePrice {
+  color: var(--secondary);
+}
+
+.classicDiscountBadge {
+  background: var(--secondary);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+}
+
+.classicVisual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.classicVisualCard {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 440px;
+  height: 300px;
+  aspect-ratio: 4 / 3;
+}
+
+.classicVisualImg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* ---------- indicators ---------- */
+.indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.dot,
+.pill {
+  border: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.5);
+  transition: var(--transition-fast);
+  padding: 0;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.pill {
+  width: 24px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.activeIndicator {
+  background: #fff;
+  width: 28px;
+  border-radius: 999px;
+}
+
+.dot.activeIndicator {
+  width: 9px;
+}
+
+/* ---------- nav arrows (slide mode) ---------- */
+.navArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+  padding: 0;
+}
+
+.navArrow:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.navPrev {
+  inset-inline-start: 1rem;
+}
+
+.navNext {
+  inset-inline-end: 1rem;
+}
+
+/* ---------- grid mode ---------- */
+.gridSection {
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+.slidesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .slidesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gridCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gridCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+.gridCardImg {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.gridCardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.gridCard:hover .gridCardImg img {
+  transform: scale(1.05);
+}
+
+.gridCardBody {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  text-align: start;
+  align-items: flex-start;
+}
+
+.gridCardTitle {
+  font-size: clamp(1.2rem, 1rem + 1vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.gridCardDesc {
+  font-size: clamp(0.9rem, 0.85rem + 0.3vw, 1.05rem);
+  line-height: 1.65;
+  opacity: 0.75;
+  margin: 0;
+  flex: 1;
+}
+
+.introSectionHeader {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 1.25rem;
+  padding: 0 1.5rem;
+  text-align: start;
+}
+
+.introSectionTitle {
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.introSectionSubtitle {
+  font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1.05rem);
+  opacity: 0.75;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ────────────────────────────────────────────────────────────
+ * Slide Transition Animation Variants
+ * ──────────────────────────────────────────────────────────── */
+.slideContentWrapper {
+  width: 100%;
+  height: 100%;
+  will-change: transform, opacity;
+}
+
+.anim_fade {
+  animation: introFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim_slide {
+  animation: introSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim_zoom {
+  animation: introZoomIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim_flip {
+  animation: introFlipIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes introFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes introSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(35px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes introZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes introFlipIn {
+  from {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(12deg) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0deg) translateY(0);
+  }
+}
+

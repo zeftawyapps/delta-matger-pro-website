@@ -1,0 +1,27 @@
+{
+  "name": "temp-project",
+  "version": "1.2.4",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack -p 8090",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "deploy": "./project_builder/build_client.sh deploy",
+    "configure": "python3 project_builder/configure.py"
+  },
+  "dependencies": {
+    "next": "16.2.9",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "firebase-tools": "latest",
+    "typescript": "^6.0.3"
+  }
+}
