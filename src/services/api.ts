@@ -634,6 +634,7 @@ export const api = {
     token: string
   ): Promise<UserProfile> => {
     const body: Record<string, any> = {
+      name: profile.name || profile.username,
       username: profile.username,
       email: profile.email,
       phone: profile.phone,

@@ -1,13 +1,13 @@
 # 🌐 Active Client Configuration
-# Dynamic generated from clients/tantest.yaml. Do not edit directly.
+# Dynamic generated from clients/local.yaml. Do not edit directly.
 
-activeClient: "tantest"
+activeClient: "local"
 
 appVersion: "1.2.4"
 appBuildIndex: 4
 
 # 🌍 Active environment (local, dev, prod)
-env: "prod"
+env: "local"
 
 # 🔥 Firebase Project
-firebaseProject: "tantest-dev"
+firebaseProject: "domansy-dev"

@@ -464,7 +464,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
               username: profileData.username,
               email: profileData.email,
               phone: profileData.phone,
-              name: profileData.username || profileData.phone || "",
+              name: profileData.name || profileData.username || profileData.phone || "",
             });
           } else {
             // Token is invalid / expired: clear it from client storage
@@ -579,6 +579,18 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!authToken) throw new Error("User is not authenticated");
     const updatedProfile = await api.updateMyProfile(profileInput, authToken);
     setProfile(updatedProfile);
+    if (updatedProfile) {
+      setCurrentUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              username: updatedProfile.username || prev.username,
+              phone: updatedProfile.phone || prev.phone,
+              name: updatedProfile.name || updatedProfile.username || updatedProfile.phone || prev.name,
+            }
+          : null
+      );
+    }
   };
 
   const loginWithCredentials = async (emailOrUsername: string, password: string) => {
