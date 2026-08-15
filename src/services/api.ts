@@ -958,30 +958,23 @@ export const api = {
   // 8. Submit Feedback / Complaints
   submitFeedback: async (
     organizationId: string,
-    payload: { name: string; contact: string; type: string; message: string }
+    payload: { name: string; contact: string; type: string; message: string },
+    token?: string
   ): Promise<any> => {
-    try {
-      const response = await fetch(`${getBaseUrl()}/feedback/organization/${organizationId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId,
-          ...payload,
-          createdAt: new Date().toISOString(),
-        }),
-      });
-      if (!response.ok) {
-        const fallbackRes = await fetch(`${getBaseUrl()}/contact/organization/${organizationId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ organizationId, ...payload }),
-        }).catch(() => null);
-        if (fallbackRes && fallbackRes.ok) return await fallbackRes.json();
-      }
-      return await response.json();
-    } catch (error) {
-      console.warn("Error sending feedback payload to backend.", error);
-      return { success: true };
-    }
+    const bodyPayload = {
+      organizationId,
+      type: payload.type || 'suggestion',
+      userName: payload.name || undefined,
+      userEmail: payload.contact || undefined,
+      comment: payload.message || '',
+    };
+
+    const payloadRes = await requestJson('/feedback/submit', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(bodyPayload),
+    });
+
+    return getResponseData(payloadRes);
   }
 };

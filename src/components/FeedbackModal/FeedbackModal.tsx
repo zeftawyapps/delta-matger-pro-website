@@ -12,35 +12,43 @@ interface FeedbackModalProps {
 }
 
 export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
-  const { lang, config } = useApp();
+  const { lang, config, authToken, currentUser } = useApp();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [type, setType] = useState("suggestion");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  React.useEffect(() => {
+    if (isOpen && currentUser) {
+      if (!name) setName(currentUser.name || currentUser.username || "");
+      if (!contact) setContact(currentUser.phone || currentUser.email || "");
+    }
+  }, [isOpen, currentUser]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg("");
 
     try {
       const orgId = config?.id || clientConfig?.defaultOrgName || "deltastore";
-      await api.submitFeedback(orgId, {
-        name,
-        contact,
-        type,
-        message,
-      });
-    } catch (err) {
-      console.warn("Feedback submitted or handled.", err);
-    } finally {
-      setLoading(false);
-      setSuccess(true);
+      await api.submitFeedback(
+        orgId,
+        {
+          name,
+          contact,
+          type,
+          message,
+        },
+        authToken || undefined
+      );
 
-      // Reset inputs
+      setSuccess(true);
       setName("");
       setContact("");
       setType("suggestion");
@@ -50,6 +58,11 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         setSuccess(false);
         onClose();
       }, 2500);
+    } catch (err: any) {
+      console.error("Feedback submission failed:", err);
+      setErrorMsg(err.message || (lang === "ar" ? "فشل إرسال الملاحظات" : "Submission failed"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,6 +94,11 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         ) : (
           <>
             <h3>{modalTitle}</h3>
+            {errorMsg && (
+              <div style={{ color: "color-mix(in srgb, red 80%, white)", fontSize: "0.85rem", textAlign: "center", margin: "0.5rem 0" }}>
+                ⚠️ {errorMsg}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.formGroup}>
                 <label>

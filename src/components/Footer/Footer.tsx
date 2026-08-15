@@ -70,14 +70,18 @@ export default function Footer() {
   const dynamicCategories = getDynamicCategories();
 
   // Branding configuration fallbacks
-  const footerDesc = config?.footer?.description || t.slogan;
-  const address = config?.footer?.address || (lang === "ar" ? "القاهرة، جمهورية مصر العربية" : "Cairo, Egypt");
-  const phone = config?.footer?.phone || "+20 100 000 0000";
-  const email = config?.footer?.email || "support@domancy.com";
+  const clientFooter = (clientConfig as any)?.footer;
+  const clientSocial = (clientConfig as any)?.socialMedia;
 
-  const facebookUrl = config?.socialMedia?.facebook || "https://facebook.com";
-  const telegramUrl = config?.socialMedia?.telegram || "https://telegram.me";
-  const whatsappNumber = config?.socialMedia?.whatsapp || "";
+  const footerDesc = config?.footer?.description || clientFooter?.description || (clientConfig as any)?.appDescription || t.slogan;
+  const address = config?.footer?.address || clientFooter?.address || (lang === "ar" ? "القاهرة، جمهورية مصر العربية" : "Cairo, Egypt");
+  const phone = config?.footer?.phone || clientFooter?.phone || "+20 100 000 0000";
+  const email = config?.footer?.email || clientFooter?.email || "support@domancy.com";
+
+  const facebookUrl = config?.socialMedia?.facebook || clientSocial?.facebook || "";
+  const telegramUrl = config?.socialMedia?.telegram || clientSocial?.telegram || "";
+  const whatsappNumber = config?.socialMedia?.whatsapp || clientSocial?.whatsapp || "";
+  const instagramUrl = config?.socialMedia?.instagram || clientSocial?.instagram || "";
 
   const footerLayout = config?.website?.footerLayout ?? 'classic';
   const footerTheme = config?.website?.footerTheme ?? 'solid';
@@ -93,9 +97,9 @@ export default function Footer() {
         {/* Column 1: Slogan/Definition */}
         <div className={styles.column}>
           <Link href="/" className={styles.logo}>
-            {config?.visual?.logoUrl ? (
+            {config?.visual?.logoUrl || (clientConfig as any)?.logoUrl ? (
               <img
-                src={config.visual.logoUrl}
+                src={config?.visual?.logoUrl || (clientConfig as any)?.logoUrl}
                 alt={appTitle}
                 className={styles.logoImage}
               />
@@ -201,6 +205,11 @@ export default function Footer() {
             {facebookUrl && (
               <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className={styles.socialIcon} title="Facebook">
                 📘
+              </a>
+            )}
+            {instagramUrl && (
+              <a href={instagramUrl} target="_blank" rel="noopener noreferrer" className={styles.socialIcon} title="Instagram">
+                📸
               </a>
             )}
             {telegramUrl && (

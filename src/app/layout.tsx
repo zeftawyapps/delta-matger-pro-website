@@ -5,15 +5,19 @@ import clientConfig from "@/config/clientConfig.json";
 
 export const metadata = {
   title: clientConfig.appTitle || "MatgerPro - Multi-template Hub",
-  description: clientConfig.appDescription || "Next.js templates for premium Blogs and e-commerce Stores with interactive translations and native dark mode.",
+  description: (clientConfig as any)?.appDescription || (clientConfig as any)?.seo?.appDescription || "Next.js templates for premium Blogs and e-commerce Stores with interactive translations and native dark mode.",
+  keywords: (clientConfig as any)?.keywords || (clientConfig as any)?.seo?.keywords || "متجر, تسوق, إلكتروني",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const themeColor = (clientConfig as any)?.themeColor || (clientConfig as any)?.seo?.themeColor || "#D4AF37";
+
   return (
     <AppContextProvider>
       <html lang="ar" dir="rtl" data-theme="light" data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <meta name="color-scheme" content="light dark" />
+          <meta name="theme-color" content={themeColor} />
           <style id="dynamic-theme-vars" />
           {/* Prevent Flash of Unstyled Content (FOUC) & LTR/RTL layout shift */}
           <script

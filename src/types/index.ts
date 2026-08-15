@@ -106,6 +106,7 @@ export interface OrgConfig {
     facebook?: string;
     telegram?: string;
     whatsapp?: string;
+    instagram?: string;
   };
   footer?: {
     address?: string;
@@ -235,6 +236,7 @@ export interface WebsiteConfig {
     facebook?: string;
     telegram?: string;
     whatsapp?: string;
+    instagram?: string;
   };
   excessLinksMode?: 'dropdown' | 'sidebar';
   navbarLinksStyle?: 'classic' | 'capsule' | 'glass';
