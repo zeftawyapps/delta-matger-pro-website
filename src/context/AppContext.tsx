@@ -5,6 +5,7 @@ import { api } from "../services/api";
 import clientConfig from "../config/clientConfig.json";
 import { applyTheme } from "../utils/theme";
 import { getCartLineKey } from "../utils/productPriceOptions";
+import { initCampaignTracker } from "../utils/campaignTracker";
 import {
   OrgConfig,
   BlogCategory,
@@ -391,6 +392,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // Load Setup Data on Mount
   useEffect(() => {
     async function loadData() {
+      // Capture and track any campaign attribution parameters immediately
+      initCampaignTracker(clientConfig.baseUrl);
+
       setLoading(true);
       try {
         const savedTheme = localStorage.getItem("theme");

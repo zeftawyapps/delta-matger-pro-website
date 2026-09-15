@@ -449,6 +449,36 @@
   text-align: justify;
 }
 
+.aboutHtmlContent {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--fg);
+}
+
+.aboutHtmlContent p {
+  margin-bottom: 1rem;
+}
+
+.aboutHtmlContent h1,
+.aboutHtmlContent h2,
+.aboutHtmlContent h3,
+.aboutHtmlContent h4 {
+  color: var(--fg);
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.aboutHtmlContent ul,
+.aboutHtmlContent ol {
+  margin-bottom: 1rem;
+  padding-inline-start: 1.5rem;
+}
+
+.aboutHtmlContent li {
+  margin-bottom: 0.35rem;
+}
+
 @media (max-width: 767px) {
   /* الموبايل يظهر الصورة في الأعلى دائماً للتوافقية */
   .aboutCompanyContent {

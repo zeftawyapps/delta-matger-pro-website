@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { BlogPost } from "@/types";
+import { stripHtml } from "@/utils/html";
 import styles from "./BlogComponents.module.css";
 
 interface TrendingSectionProps {
@@ -13,6 +14,8 @@ interface TrendingSectionProps {
 export default function TrendingSection({ posts }: TrendingSectionProps) {
   const { t, lang, categories } = useApp();
 
+  const validPosts = posts.filter((p) => p.postType !== "page" && p.postType !== "intro");
+
   return (
     <section className={`${styles.trendingSection} animateFadeUp`}>
       <div className={styles.sectionHeader}>
@@ -20,8 +23,9 @@ export default function TrendingSection({ posts }: TrendingSectionProps) {
         <h2>{t.trending}</h2>
       </div>
       <div className={styles.trendingGrid}>
-        {posts.map((post, index) => {
-          const titleStr = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+        {validPosts.map((post, index) => {
+          const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+          const titleStr = stripHtml(rawTitle);
           
           const dateVal = post.createdAt || (post as any).date || "";
           const dateStr = dateVal ? new Date(dateVal).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", {

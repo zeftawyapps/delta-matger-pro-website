@@ -3,6 +3,7 @@ import {
   BlogCategory,
   BlogPost,
   Product,
+  ProductVariant,
   Offer,
   AuthPayload,
   UserProfile,
@@ -11,6 +12,7 @@ import {
 } from '../types';
 
 import clientConfig from '../config/clientConfig.json';
+import { getCampaignAttribution } from '../utils/campaignTracker';
 
 // Base URL environment detection
 export const getEnvUrls = () => {
@@ -132,6 +134,24 @@ const ADDITIONAL_DATA_KEYS = [
   'ingredients',
 ] as const;
 
+export function normalizeVariants(rawVariants: any): ProductVariant[] {
+  if (!Array.isArray(rawVariants)) return [];
+  return rawVariants
+    .filter((v) => v && (v.name || v.options))
+    .map((v) => ({
+      name: v.name || '',
+      options: Array.isArray(v.options)
+        ? v.options.map((opt: any) => ({
+            value: opt.value ?? '',
+            imageUrls: Array.isArray(opt.imageUrls)
+              ? opt.imageUrls.map((img: string) => getFullImageUrl(img))
+              : (opt.imageUrl ? [getFullImageUrl(opt.imageUrl)] : []),
+            priceModifier: Number(opt.priceModifier) || 0,
+          }))
+        : [],
+    }));
+}
+
 // TODO (Refactor): Move to Product Mapper / Domain Layer (repositories/mappers/product_mapper.ts)
 function buildAdditionalData(raw: Record<string, any>): Product['additionalData'] {
   const fromNested = raw.additionalData && typeof raw.additionalData === 'object'
@@ -144,6 +164,19 @@ function buildAdditionalData(raw: Record<string, any>): Product['additionalData'
     }
   }
 
+  const rawVariants = raw.variants || fromNested.variants || fromNested.additionalData?.variants;
+  if (rawVariants) {
+    fromNested.variants = normalizeVariants(rawVariants);
+  }
+
+  if (raw.addons || fromNested.addons) {
+    fromNested.addons = raw.addons || fromNested.addons;
+  }
+
+  if (raw.options || fromNested.options) {
+    fromNested.options = raw.options || fromNested.options;
+  }
+
   return Object.keys(fromNested).length > 0 ? fromNested : undefined;
 }
 
@@ -152,10 +185,34 @@ export function mapProductFromApi(raw: Record<string, any>): Product {
   const images = raw.images && Array.isArray(raw.images) && raw.images.length > 0
     ? raw.images
     : (raw.imageUrls && Array.isArray(raw.imageUrls) && raw.imageUrls.length > 0 ? raw.imageUrls : []);
-  const productImage = images.length > 0
-    ? getFullImageUrl(images[0])
+  
+  const additionalData = buildAdditionalData(raw);
+  const rawVariants = raw.variants || additionalData?.variants || raw.additionalData?.additionalData?.variants;
+  const variants = normalizeVariants(rawVariants);
+
+  // Extract variant image URLs and ensure they are part of product gallery
+  const variantImages: string[] = [];
+  variants.forEach((v) => {
+    v.options.forEach((opt) => {
+      if (opt.imageUrls && opt.imageUrls.length > 0) {
+        opt.imageUrls.forEach((img) => {
+          if (img && !variantImages.includes(img)) variantImages.push(img);
+        });
+      }
+    });
+  });
+
+  const rawImages = images.length > 0 ? images.map((img: string) => getFullImageUrl(img)) : [];
+  const allImages = [...rawImages];
+  variantImages.forEach((img) => {
+    if (!allImages.includes(img)) {
+      allImages.push(img);
+    }
+  });
+
+  const productImage = allImages.length > 0
+    ? allImages[0]
     : (raw.image ? getFullImageUrl(raw.image) : undefined);
-  const productImages = images.map((img: string) => getFullImageUrl(img));
 
   return {
     id: raw.id || raw.productId || raw._id,
@@ -165,11 +222,14 @@ export function mapProductFromApi(raw: Record<string, any>): Product {
     unit: raw.unit || 'pcs',
     discount: raw.discount,
     priceOptions: Array.isArray(raw.priceOptions) ? raw.priceOptions : undefined,
+    variants: variants.length > 0 ? variants : undefined,
+    addons: Array.isArray(raw.addons) ? raw.addons : additionalData?.addons,
+    options: Array.isArray(raw.options) ? raw.options : additionalData?.options,
     minPrice: raw.minPrice,
     maxPrice: raw.maxPrice,
     hasMultipleSizes: raw.hasMultipleSizes,
     imageUrl: productImage,
-    imageUrls: productImages,
+    imageUrls: allImages,
     isActive: raw.isActive !== false,
     isNew: raw.isNew === true,
     isBestSeller: raw.isBestSeller === true,
@@ -178,7 +238,7 @@ export function mapProductFromApi(raw: Record<string, any>): Product {
     isSuperJoker: raw.isSuperJoker === true,
     categoryId: raw.categoryId || raw.category || '',
     organizationId: raw.organizationId || '',
-    additionalData: buildAdditionalData(raw),
+    additionalData,
   };
 }
 
@@ -751,6 +811,15 @@ export const api = {
     params.set('calculationMode', String(args.calculationMode ?? 2));
     if (args.orderMode) params.set('orderMode', args.orderMode);
 
+    const campaignAttribution = getCampaignAttribution();
+    if (campaignAttribution?.campaignId) {
+      params.set('cid', campaignAttribution.campaignId);
+      params.set('campaignId', campaignAttribution.campaignId);
+    }
+    if (campaignAttribution?.platform) {
+      params.set('platform', campaignAttribution.platform);
+    }
+
     const path = `/orders/${args.organizationId}?${params.toString()}`;
     const payload = await requestJson(path, {
       method: 'POST',
@@ -761,6 +830,7 @@ export const api = {
         totalOrderPrice: args.totalOrderPrice,
         items: args.items,
         additionalCalculation: args.additionalCalculation,
+        campaignAttribution: campaignAttribution || undefined,
       }),
     });
     return getResponseData(payload);

@@ -33,6 +33,7 @@ import ContactUs from "@/components/store/ContactUs";
 import Link from "next/link";
 import IntroSlides from "@/components/intro/IntroSlides";
 import { getIntroConfigFromSection, normalizeIntroDisplayMode } from "@/utils/introConfig";
+import { isHtml, stripHtml } from "@/utils/html";
 import styles from "./Home.module.css";
 
 function HomepageContent() {
@@ -145,16 +146,22 @@ function HomepageContent() {
 
   // Filters for Blog Posts
   const filteredPosts = posts.filter((post) => {
+    // Only include actual blog posts (exclude static pages and intro slides)
+    if (post.postType === "page" || post.postType === "intro") return false;
+
     const postCatName = typeof post.blogCategoryId === "string" ? post.blogCategoryId : "";
     const matchesCategory =
       activeBlogCategory === "all" ||
       postCatName === activeBlogCategory ||
       post.slug.includes(activeBlogCategory);
     
-    const titleText = typeof post.title === "string" ? post.title : post.title?.[lang] || post.title?.ar || "";
+    const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang] || post.title?.ar || "";
+    const titleText = stripHtml(rawTitle);
     const descObj = post.seoDescription || (post as any).description;
-    const descText = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
-    const contentText = typeof post.content === "string" ? post.content : post.content?.[lang] || post.content?.ar || "";
+    const rawDesc = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+    const descText = stripHtml(rawDesc);
+    const rawContent = typeof post.content === "string" ? post.content : post.content?.[lang] || post.content?.ar || "";
+    const contentText = stripHtml(rawContent);
     
     const matchesSearch =
       searchQuery.trim() === "" ||
@@ -394,8 +401,8 @@ function HomepageContent() {
               {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
             </Link>
           </div>
-          {/* Featured Post Card in normal state */}
-          {!isSearching && featured && !isMostRead && (
+          {/* Featured Post Card in normal state (only in grid mode, not in slider/horizontal_list) */}
+          {!isSearching && featured && !isMostRead && (!section.displayMode || section.displayMode === "grid") && (
             <FeaturedPost post={featured} />
           )}
           <PostGrid posts={list} displayMode={section.displayMode} />
@@ -484,8 +491,10 @@ function HomepageContent() {
       const post = posts.find((p) => p.slug === slug);
       if (!post) return null;
       
-      const titleStr = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+      const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+      const titleStr = stripHtml(rawTitle);
       const contentStr = typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "";
+      const isHtmlContent = isHtml(contentStr);
       const imgUrl = post.imageUrl || (post as any).image;
       
       // موضع الصورة المحدد (يسار افتراضياً)
@@ -509,9 +518,16 @@ function HomepageContent() {
               </div>
             )}
             <div className={styles.aboutCompanyText}>
-              {contentStr.split("\n\n").map((paragraph, idx) => (
-                <p key={idx} className={styles.aboutParagraph}>{paragraph}</p>
-              ))}
+              {isHtmlContent ? (
+                <div
+                  className={styles.aboutHtmlContent}
+                  dangerouslySetInnerHTML={{ __html: contentStr }}
+                />
+              ) : (
+                contentStr.split("\n\n").map((paragraph, idx) => (
+                  <p key={idx} className={styles.aboutParagraph}>{paragraph}</p>
+                ))
+              )}
             </div>
           </div>
         </section>

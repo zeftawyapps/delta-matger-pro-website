@@ -373,7 +373,7 @@ def main():
     # Firebase configurations
     firebase_cfg = client_config.get("firebase", {})
     firebase_project = firebase_cfg.get("project", "domansy-dev")
-    firebase_region = firebase_cfg.get("region", "me-central1")
+    firebase_region = firebase_cfg.get("region", "europe-west3")
 
     # Environment and Base URLs
     active_env = client_config.get("env", "local" if client_name == "local" else "prod")

@@ -232,19 +232,45 @@ export default function IntroSlides({ config, displayMode, title, description }:
   switch (merged.displayStyle) {
     case "minimal_glass": {
       const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const bgImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
+      const titleClass = chrome.useGradientTitle
+        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
+        : "";
+
       inner = (
         <div className={`${styles.glassWrapper} ${alignClass}`}>
-          {slide.image && (
-            <img src={slide.image} alt="" className={styles.blurBg} aria-hidden />
+          {chrome.showGlow && (
+            <div
+              className={`${styles.classicHeroGlow} ${appMode === "store" ? styles.classicHeroGlowStore : ""}`}
+              aria-hidden
+            />
+          )}
+          {bgImg && (
+            <img src={bgImg} alt="" className={styles.blurBg} aria-hidden />
           )}
           <div className={`${styles.glassCard} glassCard ${alignClass}`} style={textStyle}>
             {chrome.showBadge && chrome.badge && (
-              <span className={styles.classicBadge} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
                 {chrome.badge}
               </span>
             )}
-            <h1 style={textStyle}>{slide.title}</h1>
+            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
             <p style={textStyle}>{slide.description}</p>
+            {chrome.showPrice && chrome.price != null && (
+              <div className={styles.classicPriceRow}>
+                {chrome.originalPrice != null && (
+                  <span className={styles.classicOriginalPrice}>
+                    {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
+                  </span>
+                )}
+                <span className={styles.classicActivePrice}>
+                  {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
+                </span>
+                {chrome.discountLabel && (
+                  <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                )}
+              </div>
+            )}
             {chrome.showButton && chrome.buttonText && (
               <div className={styles.heroBtns}>
                 <Link
@@ -268,16 +294,42 @@ export default function IntroSlides({ config, displayMode, title, description }:
 
     case "full_split": {
       const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const visualImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
+      const titleClass = chrome.useGradientTitle
+        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
+        : "";
+
       inner = (
         <div className={styles.splitWrapper}>
+          {chrome.showGlow && (
+            <div
+              className={`${styles.classicHeroGlow} ${appMode === "store" ? styles.classicHeroGlowStore : ""}`}
+              aria-hidden
+            />
+          )}
           <div className={`${styles.splitText} ${alignClass}`} style={textStyle}>
             {chrome.showBadge && chrome.badge && (
-              <span className={styles.classicBadge} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
                 {chrome.badge}
               </span>
             )}
-            <h1 style={textStyle}>{slide.title}</h1>
+            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
             <p style={textStyle}>{slide.description}</p>
+            {chrome.showPrice && chrome.price != null && (
+              <div className={styles.classicPriceRow}>
+                {chrome.originalPrice != null && (
+                  <span className={styles.classicOriginalPrice}>
+                    {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
+                  </span>
+                )}
+                <span className={styles.classicActivePrice}>
+                  {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
+                </span>
+                {chrome.discountLabel && (
+                  <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                )}
+              </div>
+            )}
             {chrome.showButton && chrome.buttonText && (
               <div className={styles.heroBtns}>
                 <Link
@@ -295,8 +347,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
             )}
           </div>
           <div className={styles.splitVisual}>
-            {slide.image ? (
-              <img src={slide.image} alt={slide.title} />
+            {visualImg ? (
+              <img src={visualImg} alt={slide.title} />
             ) : (
               <div className={styles.splitPlaceholder} aria-hidden />
             )}
@@ -385,20 +437,46 @@ export default function IntroSlides({ config, displayMode, title, description }:
     case "apple_fullscreen":
     default: {
       const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const bgImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
+      const titleClass = chrome.useGradientTitle
+        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
+        : "";
+
       inner = (
         <div className={`${styles.appleWrapper} ${alignClass}`}>
-          {slide.image && (
-            <img src={slide.image} alt={slide.title} className={styles.appleBg} />
+          {chrome.showGlow && (
+            <div
+              className={`${styles.classicHeroGlow} ${appMode === "store" ? styles.classicHeroGlowStore : ""}`}
+              aria-hidden
+            />
+          )}
+          {bgImg && (
+            <img src={bgImg} alt={slide.title} className={styles.appleBg} />
           )}
           <div className={styles.appleOverlay} />
           <div className={`${styles.appleContent} ${alignClass}`} style={textStyle}>
             {chrome.showBadge && chrome.badge && (
-              <span className={styles.classicBadge} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
                 {chrome.badge}
               </span>
             )}
-            <h1 style={textStyle}>{slide.title}</h1>
+            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
             <p style={textStyle}>{slide.description}</p>
+            {chrome.showPrice && chrome.price != null && (
+              <div className={styles.classicPriceRow}>
+                {chrome.originalPrice != null && (
+                  <span className={styles.classicOriginalPrice}>
+                    {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
+                  </span>
+                )}
+                <span className={styles.classicActivePrice}>
+                  {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
+                </span>
+                {chrome.discountLabel && (
+                  <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                )}
+              </div>
+            )}
             {chrome.showButton && chrome.buttonText && (
               <div className={styles.heroBtns}>
                 <Link

@@ -16,7 +16,9 @@ export function getIntroConfigFromSection(
   section: WebsiteSection | undefined,
   appMode: string
 ): IntroSlideConfig {
-  if (!section || section.type !== "intro_slides") return {};
+  if (!section) return {};
+  const sType = (section.type || "").toLowerCase().trim();
+  if (sType !== "intro_slides" && sType !== "intro" && sType !== "hero") return {};
 
   const key = INTRO_KEY_BY_MODE[appMode] ?? "introBlog";
   return (section.config?.[key] as IntroSlideConfig) ?? {};
@@ -34,9 +36,10 @@ export function getIntroConfig(
   websiteConfig: WebsiteConfig | undefined,
   appMode: string
 ): IntroSlideConfig {
-  const section = (websiteConfig?.sections ?? []).find(
-    (s) => s.type === "intro_slides" && s.isActive !== false
-  );
+  const section = (websiteConfig?.sections ?? []).find((s) => {
+    const sType = (s.type || "").toLowerCase().trim();
+    return (sType === "intro_slides" || sType === "intro" || sType === "hero") && s.isActive !== false;
+  });
   return getIntroConfigFromSection(section, appMode);
 }
 
@@ -63,7 +66,7 @@ export function withIntroDefaults(config: IntroSlideConfig): Required<
 /** Normalize section displayMode for IntroSlides (grid vs slide carousel). */
 export function normalizeIntroDisplayMode(displayMode?: string): "grid" | "slide" {
   if (displayMode === "grid") return "grid";
-  // Admin stores "slider"; legacy data may use "slide".
+  // Admin stores "slider", "horizontal_list", "scroll", or "slide".
   return "slide";
 }
 

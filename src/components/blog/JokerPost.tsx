@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { BlogPost } from "@/types";
+import { stripHtml } from "@/utils/html";
 import styles from "./BlogComponents.module.css";
 
 interface JokerPostProps {
@@ -22,7 +23,8 @@ export default function JokerPost({ post, posts, title, description, config }: J
   const { t, lang, categories } = useApp();
 
   const imageCount = config?.imageCount ?? 1;
-  const postList = posts && posts.length > 0 ? posts : post ? [post] : [];
+  const postList = (posts && posts.length > 0 ? posts : post ? [post] : [])
+    .filter((p) => p.postType !== "page" && p.postType !== "intro");
   const activePosts = postList.slice(0, Math.max(1, imageCount));
 
   if (activePosts.length === 0) return null;
@@ -30,10 +32,13 @@ export default function JokerPost({ post, posts, title, description, config }: J
   const isFullScreen = config?.fullScreen !== false;
 
   const renderCard = (p: BlogPost, isMulti: boolean) => {
-    const titleStr = typeof p.title === "string" ? p.title : p.title?.[lang as any] || p.title?.ar || "";
+    const rawTitle = typeof p.title === "string" ? p.title : p.title?.[lang as any] || p.title?.ar || "";
+    const titleStr = stripHtml(rawTitle);
     const descObj = p.seoDescription || (p as any).description;
-    const descStr = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
-    const fallbackDesc = descStr || (typeof p.content === "string" ? p.content : p.content?.[lang as any] || p.content?.ar || "").slice(0, 140) + "...";
+    const rawDesc = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+    const rawContent = typeof p.content === "string" ? p.content : p.content?.[lang as any] || p.content?.ar || "";
+    const cleanDesc = stripHtml(rawDesc || rawContent);
+    const fallbackDesc = cleanDesc.length > 160 ? cleanDesc.slice(0, 160) + "..." : cleanDesc;
 
     const imgUrl = p.imageUrl || (p as any).image || "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=1200";
 

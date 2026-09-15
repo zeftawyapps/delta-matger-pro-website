@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
+import { isHtml, stripHtml } from "@/utils/html";
 import styles from "./PostPage.module.css";
 
 interface Comment {
@@ -32,8 +33,8 @@ export default function BlogPostContent() {
   const [commentText, setCommentText] = useState("");
   const [commentSuccess, setCommentSuccess] = useState(false);
 
-  // Find the post from active state posts list
-  const post = posts.find((p) => p.slug === slug);
+  // Find the post from active state posts list (ensure it is a post, not a page or intro)
+  const post = posts.find((p) => p.slug === slug && p.postType !== "page" && p.postType !== "intro");
 
   // Calculate reading progress
   useEffect(() => {
@@ -48,8 +49,8 @@ export default function BlogPostContent() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Filter related posts (exclude current)
-  const relatedPosts = posts.filter((p) => p.slug !== slug).slice(0, 2);
+  // Filter related posts (exclude current and exclude pages/intros)
+  const relatedPosts = posts.filter((p) => p.slug !== slug && p.postType !== "page" && p.postType !== "intro").slice(0, 2);
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,10 +91,13 @@ export default function BlogPostContent() {
   }
 
   // Resilient parsing
-  const titleStr = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+  const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+  const titleStr = stripHtml(rawTitle);
   const descObj = post.seoDescription || (post as any).description;
-  const descStr = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+  const rawDesc = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+  const descStr = stripHtml(rawDesc);
   const contentStr = typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "";
+  const isHtmlContent = isHtml(contentStr);
   
   const imgUrl = post.imageUrl || (post as any).image || "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800";
   
@@ -104,7 +108,8 @@ export default function BlogPostContent() {
     day: "numeric",
   }) : "";
 
-  const readingTime = (post as any).readTime || Math.max(1, Math.ceil(contentStr.trim().split(/\s+/).filter(Boolean).length / 220));
+  const plainText = stripHtml(contentStr);
+  const readingTime = (post as any).readTime || Math.max(1, Math.ceil(plainText.trim().split(/\s+/).filter(Boolean).length / 220));
 
   const categoryObj = categories.find((c) => c.id === post.blogCategoryId);
   const categoryName = categoryObj ? (categoryObj.name?.[lang as any] || categoryObj.name?.ar || "") : "";
@@ -150,11 +155,18 @@ export default function BlogPostContent() {
           {/* Main Article Body */}
           <article className={styles.articleBody}>
             {descStr && <p className={styles.leadParagraph}>{descStr}</p>}
-            {contentStr.split("\n\n").map((paragraph, idx) => (
-              <p key={idx} className={styles.paragraph}>
-                {paragraph}
-              </p>
-            ))}
+            {isHtmlContent ? (
+              <div
+                className={styles.articleContentHtml}
+                dangerouslySetInnerHTML={{ __html: contentStr }}
+              />
+            ) : (
+              contentStr.split("\n\n").map((paragraph, idx) => (
+                <p key={idx} className={styles.paragraph}>
+                  {paragraph}
+                </p>
+              ))
+            )}
 
             {/* Sharing Bar */}
             <div className={styles.shareBar}>
@@ -173,7 +185,8 @@ export default function BlogPostContent() {
               <h3>{t.relatedPosts}</h3>
               <div className={styles.relatedList}>
                 {relatedPosts.map((rPost) => {
-                  const rTitle = typeof rPost.title === "string" ? rPost.title : rPost.title?.[lang as any] || rPost.title?.ar || "";
+                  const rawRTitle = typeof rPost.title === "string" ? rPost.title : rPost.title?.[lang as any] || rPost.title?.ar || "";
+                  const rTitle = stripHtml(rawRTitle);
                   const rImg = rPost.imageUrl || (rPost as any).image || "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800";
                   const rTime = (rPost as any).readTime || 5;
 

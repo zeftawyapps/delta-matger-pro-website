@@ -46,6 +46,32 @@ export interface ProductPriceOption {
   customPrices?: Record<string, number>;
 }
 
+export interface ProductVariantOption {
+  value: string | LocalizedString;
+  imageUrls?: string[];
+  priceModifier?: number;
+}
+
+export interface ProductVariant {
+  name: string | LocalizedString;
+  options: ProductVariantOption[];
+}
+
+export interface ProductAddon {
+  id?: string;
+  name: string | LocalizedString;
+  price?: number;
+  [key: string]: any;
+}
+
+export interface ProductOption {
+  id?: string;
+  name: string | LocalizedString;
+  type?: string;
+  values?: (string | LocalizedString)[];
+  [key: string]: any;
+}
+
 export interface Product {
   id: string;
   name: string | LocalizedString;
@@ -54,6 +80,9 @@ export interface Product {
   unit?: string;
   discount?: number;
   priceOptions?: ProductPriceOption[];
+  variants?: ProductVariant[];
+  addons?: ProductAddon[];
+  options?: ProductOption[];
   minPrice?: number;
   maxPrice?: number;
   hasMultipleSizes?: boolean;
@@ -70,13 +99,19 @@ export interface Product {
   additionalData?: {
     description?: string;
     detailedDescription?: string;
-    isDetailedDescriptionHtml?: boolean;
+    isDetailedDescriptionHtml?: boolean | string;
     usage?: string;
     benefits?: string[];
     ingredients?: string[];
+    isInsideOffer?: boolean | string;
     selectedPriceOptionKey?: string;
     selectedSize?: string;
     selectedColor?: string;
+    selectedVariants?: Record<string, string>;
+    variants?: ProductVariant[];
+    addons?: ProductAddon[];
+    options?: ProductOption[];
+    [key: string]: any;
   };
 }
 
@@ -139,7 +174,7 @@ export interface Offer {
 
 export type AppMode = 'blog' | 'store' | 'hybrid';
 export type LogoStyle = 'solid' | 'gradient';
-export type DisplayMode = 'horizontal_list' | 'horizontal' | 'grid' | 'slider';
+export type DisplayMode = 'horizontal_list' | 'horizontal' | 'grid' | 'slider' | 'slide' | 'list' | 'scroll';
 export type IntroDisplayStyle =
   | 'apple_fullscreen'
   | 'minimal_glass'

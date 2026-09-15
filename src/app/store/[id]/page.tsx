@@ -1,13 +1,73 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import { formatPrice } from "@/utils/currency";
+import { isHtml } from "@/utils/html";
+import { Product, ProductVariant, ProductVariantOption, ProductPriceOption } from "@/types";
 import styles from "./ProductPage.module.css";
+
+// Helper to extract localized text
+function getLoc(val: any, lang: 'ar' | 'en'): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  return val[lang] || val.ar || val.en || '';
+}
+
+// Helper to extract hex color code from a string (e.g. "رمادي (#757575)", "Navy Blue (#0D47A1)", or pure hex)
+function parseColorHex(valueStr: string): string {
+  if (!valueStr) return '#888888';
+  const hexMatch = valueStr.match(/#([0-9a-fA-F]{3,8})/);
+  if (hexMatch) {
+    return hexMatch[0];
+  }
+  const lower = valueStr.toLowerCase().trim();
+  if (lower.includes('أحمر') || lower.includes('احمر') || lower.includes('red')) return '#e53935';
+  if (lower.includes('أزرق') || lower.includes('ازرق') || lower.includes('blue')) return '#1e88e5';
+  if (lower.includes('كحلي') || lower.includes('navy')) return '#0d47a1';
+  if (lower.includes('أخضر') || lower.includes('اخضر') || lower.includes('green')) return '#43a047';
+  if (lower.includes('أصفر') || lower.includes('اصفر') || lower.includes('yellow')) return '#fdd835';
+  if (lower.includes('رمادي') || lower.includes('grey') || lower.includes('gray')) return '#757575';
+  if (lower.includes('أسود') || lower.includes('اسود') || lower.includes('black')) return '#212121';
+  if (lower.includes('أبيض') || lower.includes('ابيض') || lower.includes('white')) return '#ffffff';
+  if (lower.includes('وردي') || lower.includes('بمبي') || lower.includes('pink')) return '#e91e63';
+  if (lower.includes('برتقالي') || lower.includes('orange')) return '#ff9800';
+  if (lower.includes('بني') || lower.includes('brown')) return '#795548';
+  if (lower.includes('بيج') || lower.includes('beige')) return '#f5f5dc';
+  if (lower.includes('بنفسجي') || lower.includes('purple')) return '#9c27b0';
+  
+  return '#757575';
+}
+
+// Clean option label by removing (#HEX)
+function cleanOptionLabel(valueStr: string): string {
+  if (!valueStr) return '';
+  return valueStr.replace(/\s*\([#0-9a-fA-F]+\)\s*/g, '').trim() || valueStr;
+}
+
+// Check if a variant group represents Colors
+function isColorVariantGroup(name: string): boolean {
+  const norm = name.toLowerCase();
+  return norm.includes('لون') || norm.includes('الوان') || norm.includes('ألوان') || norm.includes('color') || norm.includes('colour');
+}
+
+// Check if a variant group represents Sizes
+function isSizeVariantGroup(name: string): boolean {
+  const norm = name.toLowerCase();
+  return norm.includes('مقاس') || norm.includes('المقاس') || norm.includes('حجم') || norm.includes('الحجم') || norm.includes('size');
+}
+
+interface SelectedVariantState {
+  groupName: string;
+  optionLabel: string;
+  cleanLabel: string;
+  priceModifier: number;
+  imageUrl?: string;
+}
 
 export default function ProductContent() {
   const params = useParams<{ id: string }>();
@@ -19,8 +79,8 @@ export default function ProductContent() {
 
   // State controls
   const [activeImg, setActiveImg] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
-  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, SelectedVariantState>>({});
+  const [selectedPriceOption, setSelectedPriceOption] = useState<ProductPriceOption | null>(null);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState("desc");
   const [added, setAdded] = useState(false);
@@ -67,28 +127,89 @@ export default function ProductContent() {
     }
   };
 
+  // Extract all available variants from product
+  const variantsList: ProductVariant[] = useMemo(() => {
+    if (!product) return [];
+    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+      return product.variants;
+    }
+    const fromAdditional = product.additionalData?.variants;
+    if (fromAdditional && Array.isArray(fromAdditional) && fromAdditional.length > 0) {
+      return fromAdditional;
+    }
+    // Fallback: build variants from legacy colors/sizes arrays if present
+    const legacyVariants: ProductVariant[] = [];
+    const colors = (product as any).colors;
+    if (Array.isArray(colors) && colors.length > 0) {
+      legacyVariants.push({
+        name: { ar: "اللون", en: "Color" },
+        options: colors.map((c: string) => ({
+          value: c,
+          imageUrls: [],
+          priceModifier: 0
+        }))
+      });
+    }
+    const sizes = (product as any).sizes;
+    if (Array.isArray(sizes) && sizes.length > 0) {
+      legacyVariants.push({
+        name: { ar: "المقاس", en: "Size" },
+        options: sizes.map((s: string) => ({
+          value: s,
+          imageUrls: [],
+          priceModifier: 0
+        }))
+      });
+    }
+    return legacyVariants;
+  }, [product]);
+
   // Sync initial selections on mount or product change
   useEffect(() => {
     if (product) {
-      const imgUrl = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
-      setActiveImg(imgUrl);
-      
-      const colors = (product as any).colors || [];
-      setSelectedColor(colors.length > 0 ? colors[0] : "");
-      
-      const priceOpts = product.priceOptions || [];
-      if (priceOpts.length > 0) {
-        setSelectedSize(priceOpts[0].sizeDisplay 
-          ? (typeof priceOpts[0].sizeDisplay === "string" ? priceOpts[0].sizeDisplay : priceOpts[0].sizeDisplay[lang] || priceOpts[0].sizeDisplay.ar)
-          : `${priceOpts[0].quantity} ${priceOpts[0].unit || ""}`
-        );
-      } else {
-        const sizes = (product as any).sizes || [];
-        setSelectedSize(sizes.length > 0 ? sizes[0] : "");
+      const mainImg = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
+      let initialImg = mainImg;
+
+      // Initialize default selections for each variant group
+      const initVariants: Record<string, SelectedVariantState> = {};
+      if (variantsList.length > 0) {
+        variantsList.forEach((vg) => {
+          const gName = getLoc(vg.name, lang) || getLoc(vg.name, 'ar') || 'Variant';
+          if (vg.options && vg.options.length > 0) {
+            const firstOpt = vg.options[0];
+            const optLabel = getLoc(firstOpt.value, lang) || getLoc(firstOpt.value, 'ar');
+            const cleanLbl = cleanOptionLabel(optLabel);
+            const firstImg = firstOpt.imageUrls && firstOpt.imageUrls.length > 0 ? firstOpt.imageUrls[0] : undefined;
+            
+            initVariants[gName] = {
+              groupName: gName,
+              optionLabel: optLabel,
+              cleanLabel: cleanLbl,
+              priceModifier: Number(firstOpt.priceModifier) || 0,
+              imageUrl: firstImg,
+            };
+
+            // If this is a color group with an image, default the active image to it
+            if (isColorVariantGroup(gName) && firstImg) {
+              initialImg = firstImg;
+            }
+          }
+        });
       }
+
+      setSelectedVariants(initVariants);
+      setActiveImg(initialImg);
+
+      // Price options initialization
+      if (product.priceOptions && product.priceOptions.length > 0) {
+        setSelectedPriceOption(product.priceOptions[0]);
+      } else {
+        setSelectedPriceOption(null);
+      }
+
       setQty(1);
     }
-  }, [product, lang]);
+  }, [product, variantsList, lang]);
 
   if (!product) {
     return (
@@ -112,9 +233,18 @@ export default function ProductContent() {
   
   const mainImgUrl = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
   
-  const gallery = product.imageUrls && product.imageUrls.length > 0
-    ? product.imageUrls
-    : [mainImgUrl, "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=600", "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600"];
+  // Gallery collection: main image + gallery + variant images
+  const gallery: string[] = [];
+  if (product.imageUrls && product.imageUrls.length > 0) {
+    product.imageUrls.forEach((img) => {
+      if (img && !gallery.includes(img)) gallery.push(img);
+    });
+  } else {
+    gallery.push(mainImgUrl);
+  }
+  if (gallery.length === 0) {
+    gallery.push("https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600");
+  }
 
   const ratingVal = (product as any).rating || 5;
   const reviewsVal = ((product as any).reviewsCount || 15) + (reviewsList.length - 2);
@@ -128,47 +258,104 @@ export default function ProductContent() {
     { name: lang === "ar" ? "الحالة" : "Condition", value: product.isNew ? (lang === "ar" ? "جديد" : "New") : (lang === "ar" ? "مستعمل نظيف" : "Like New") }
   ];
 
-  // Find current selected option price & oldPrice
-  let activePrice = product.price;
-  let activeOldPrice = product.oldPrice;
-
-  if (product.priceOptions && product.priceOptions.length > 0) {
-    const selectedOpt = product.priceOptions.find((opt) => {
-      const label = opt.sizeDisplay 
-        ? (typeof opt.sizeDisplay === "string" ? opt.sizeDisplay : opt.sizeDisplay[lang] || opt.sizeDisplay.ar)
-        : `${opt.quantity} ${opt.unit || ""}`;
-      return label === selectedSize;
+  // Add variants info to specifications
+  if (variantsList.length > 0) {
+    variantsList.forEach((vg) => {
+      const gTitle = getLoc(vg.name, lang);
+      const optsStr = vg.options.map((opt) => cleanOptionLabel(getLoc(opt.value, lang))).join(", ");
+      if (gTitle && optsStr) {
+        specsList.push({ name: gTitle, value: optsStr });
+      }
     });
-
-    if (selectedOpt) {
-      activePrice = selectedOpt.price;
-      activeOldPrice = selectedOpt.oldPrice;
-    }
   }
 
+  // Calculate prices with modifiers
+  const baseUnitPrice = selectedPriceOption ? selectedPriceOption.price : product.price;
+  const baseOldPrice = selectedPriceOption ? selectedPriceOption.oldPrice : product.oldPrice;
+
+  // Sum of price modifiers across all selected variants
+  const totalModifiers = Object.values(selectedVariants).reduce(
+    (sum, v) => sum + (v.priceModifier || 0),
+    0
+  );
+
+  const activePrice = Math.max(0, baseUnitPrice + totalModifiers);
+  const activeOldPrice = baseOldPrice != null && baseOldPrice > 0 ? Math.max(0, baseOldPrice + totalModifiers) : undefined;
+
   // Calculate discount percentage
-  const hasDiscount = activeOldPrice && activeOldPrice > activePrice;
+  const hasDiscount = activeOldPrice != null && activeOldPrice > activePrice;
   const discountPercent = hasDiscount 
     ? Math.round(((activeOldPrice - activePrice) / activeOldPrice) * 100) 
     : 0;
 
+  // Handle selecting a variant option
+  const handleSelectVariantOption = (
+    vg: ProductVariant,
+    opt: ProductVariantOption
+  ) => {
+    const gName = getLoc(vg.name, lang) || getLoc(vg.name, 'ar') || 'Variant';
+    const optLabel = getLoc(opt.value, lang) || getLoc(opt.value, 'ar');
+    const cleanLbl = cleanOptionLabel(optLabel);
+    const img = opt.imageUrls && opt.imageUrls.length > 0 ? opt.imageUrls[0] : undefined;
+
+    setSelectedVariants((prev) => ({
+      ...prev,
+      [gName]: {
+        groupName: gName,
+        optionLabel: optLabel,
+        cleanLabel: cleanLbl,
+        priceModifier: Number(opt.priceModifier) || 0,
+        imageUrl: img,
+      },
+    }));
+
+    // If the selected option has a dedicated photo, switch the gallery viewer immediately
+    if (img) {
+      setActiveImg(img);
+    }
+  };
+
+  // Find currently selected Color & Size for cart payload
+  let selectedColor = "";
+  let selectedSize = "";
+  const selectedVariantsDict: Record<string, string> = {};
+
+  Object.entries(selectedVariants).forEach(([gName, val]) => {
+    selectedVariantsDict[gName] = val.cleanLabel || val.optionLabel;
+    if (isColorVariantGroup(gName)) {
+      selectedColor = val.cleanLabel || val.optionLabel;
+    } else if (isSizeVariantGroup(gName)) {
+      selectedSize = val.cleanLabel || val.optionLabel;
+    }
+  });
+
+  if (!selectedSize && selectedPriceOption) {
+    selectedSize = selectedPriceOption.sizeDisplay
+      ? (typeof selectedPriceOption.sizeDisplay === "string" ? selectedPriceOption.sizeDisplay : selectedPriceOption.sizeDisplay[lang] || selectedPriceOption.sizeDisplay.ar)
+      : `${selectedPriceOption.quantity} ${selectedPriceOption.unit || ""}`;
+  }
+
   const handleAddToCart = () => {
-    // Add customized attributes to additionalData
-    const customizedProduct = {
+    const customizedProduct: Product = {
       ...product,
+      imageUrl: activeImg || product.imageUrl,
       price: activePrice,
       oldPrice: activeOldPrice,
       additionalData: {
         ...product.additionalData,
-        selectedColor,
-        selectedSize,
-        selectedPriceOptionKey: selectedSize,
+        selectedColor: selectedColor || undefined,
+        selectedSize: selectedSize || undefined,
+        selectedPriceOptionKey: selectedSize || undefined,
+        selectedVariants: selectedVariantsDict,
       }
     };
     addToCart(customizedProduct, qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
+
+  // Determine if size variants are already handled by `variantsList`
+  const hasSizeInVariants = variantsList.some((vg) => isSizeVariantGroup(getLoc(vg.name, 'en')) || isSizeVariantGroup(getLoc(vg.name, 'ar')));
 
   return (
     <div className={styles.wrapper}>
@@ -245,39 +432,103 @@ export default function ProductContent() {
 
             <div className={styles.divider}></div>
 
-            {/* Color Swatch Selectors */}
-            {(product as any).colors && (product as any).colors.length > 0 && (
-              <div className={styles.selectorGroup}>
-                <label className={styles.selectorLabel}>{t.selectColor}</label>
-                <div className={styles.colorsRow}>
-                  {((product as any).colors as string[]).map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setSelectedColor(color)}
-                      className={`${styles.colorCircle} ${selectedColor === color ? styles.activeColorCircle : ""}`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                      aria-label={`Select color ${color}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Dynamic Product Variants (Colors, Sizes, Custom Variants) */}
+            {variantsList.map((vg, vIdx) => {
+              const gName = getLoc(vg.name, lang) || getLoc(vg.name, 'ar') || `Variant ${vIdx + 1}`;
+              const isColor = isColorVariantGroup(gName) || isColorVariantGroup(getLoc(vg.name, 'en'));
+              const isSize = isSizeVariantGroup(gName) || isSizeVariantGroup(getLoc(vg.name, 'en'));
+              const selectedState = selectedVariants[gName];
 
-            {/* Size Selector Chips */}
-            {product.priceOptions && product.priceOptions.length > 0 ? (
+              if (isColor) {
+                return (
+                  <div key={vIdx} className={styles.selectorGroup}>
+                    <div className={styles.selectorLabelRow}>
+                      <label className={styles.selectorLabel}>{gName}:</label>
+                      {selectedState?.cleanLabel && (
+                        <span className={styles.selectedValueBadge}>{selectedState.cleanLabel}</span>
+                      )}
+                    </div>
+                    <div className={styles.colorsRow}>
+                      {vg.options.map((opt, optIdx) => {
+                        const optLabel = getLoc(opt.value, lang) || getLoc(opt.value, 'ar');
+                        const cleanLbl = cleanOptionLabel(optLabel);
+                        const hexColor = parseColorHex(optLabel);
+                        const isSelected = selectedState?.optionLabel === optLabel;
+                        const hasModifier = (opt.priceModifier || 0) !== 0;
+
+                        return (
+                          <div key={optIdx} className={styles.colorSwatchWrapper}>
+                            <button
+                              type="button"
+                              onClick={() => handleSelectVariantOption(vg, opt)}
+                              className={`${styles.colorCircle} ${isSelected ? styles.activeColorCircle : ""}`}
+                              style={{ backgroundColor: hexColor }}
+                              title={`${cleanLbl}${hasModifier ? ` (${opt.priceModifier! > 0 ? '+' : ''}${opt.priceModifier})` : ''}`}
+                              aria-label={`Select color ${cleanLbl}`}
+                            >
+                              {isSelected && <span className={styles.colorCheckmark}>✓</span>}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Non-color variant (Sizes or Custom Variants)
+              return (
+                <div key={vIdx} className={styles.selectorGroup}>
+                  <div className={styles.selectorLabelRow}>
+                    <label className={styles.selectorLabel}>{gName}:</label>
+                    {selectedState?.cleanLabel && (
+                      <span className={styles.selectedValueBadge}>{selectedState.cleanLabel}</span>
+                    )}
+                  </div>
+                  <div className={styles.sizesRow}>
+                    {vg.options.map((opt, optIdx) => {
+                      const optLabel = getLoc(opt.value, lang) || getLoc(opt.value, 'ar');
+                      const cleanLbl = cleanOptionLabel(optLabel);
+                      const isSelected = selectedState?.optionLabel === optLabel;
+                      const hasModifier = (opt.priceModifier || 0) !== 0;
+
+                      return (
+                        <button
+                          key={optIdx}
+                          type="button"
+                          onClick={() => handleSelectVariantOption(vg, opt)}
+                          className={`${styles.sizeChip} ${isSelected ? styles.activeSizeChip : ""}`}
+                        >
+                          <span>{cleanLbl}</span>
+                          {hasModifier && (
+                            <span className={styles.chipModifier}>
+                              {opt.priceModifier! > 0 ? `+${opt.priceModifier}` : opt.priceModifier}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Price Options (Quantity packages / units) when no size variant exists */}
+            {!hasSizeInVariants && product.priceOptions && product.priceOptions.length > 0 && (
               <div className={styles.selectorGroup}>
-                <label className={styles.selectorLabel}>{t.selectSize}</label>
+                <label className={styles.selectorLabel}>{t.selectSize || (lang === 'ar' ? 'الخيارات المتاحة' : 'Options')}</label>
                 <div className={styles.sizesRow}>
                   {product.priceOptions.map((opt, idx) => {
                     const label = opt.sizeDisplay 
                       ? (typeof opt.sizeDisplay === "string" ? opt.sizeDisplay : opt.sizeDisplay[lang] || opt.sizeDisplay.ar)
                       : `${opt.quantity} ${opt.unit || ""}`;
+                    const isSelected = selectedPriceOption === opt;
                     return (
                       <button
                         key={idx}
-                        onClick={() => setSelectedSize(label)}
-                        className={`${styles.sizeChip} ${selectedSize === label ? styles.activeSizeChip : ""}`}
+                        type="button"
+                        onClick={() => setSelectedPriceOption(opt)}
+                        className={`${styles.sizeChip} ${isSelected ? styles.activeSizeChip : ""}`}
                       >
                         {label} - {formatPrice(opt.price, organizationPolicy?.logistics?.currency, lang)}
                       </button>
@@ -285,22 +536,7 @@ export default function ProductContent() {
                   })}
                 </div>
               </div>
-            ) : (product as any).sizes && (product as any).sizes.length > 0 ? (
-              <div className={styles.selectorGroup}>
-                <label className={styles.selectorLabel}>{t.selectSize}</label>
-                <div className={styles.sizesRow}>
-                  {((product as any).sizes as string[]).map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`${styles.sizeChip} ${selectedSize === size ? styles.activeSizeChip : ""}`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            )}
 
             {/* Quantity Controller & Add to Cart */}
             <div className={styles.purchaseActionRow}>
@@ -309,11 +545,16 @@ export default function ProductContent() {
                   onClick={() => setQty(Math.max(1, qty - 1))}
                   className={styles.qtyBtn}
                   disabled={qty <= 1}
+                  aria-label="Decrease quantity"
                 >
                   -
                 </button>
                 <span className={styles.qtyVal}>{qty}</span>
-                <button onClick={() => setQty(qty + 1)} className={styles.qtyBtn}>
+                <button 
+                  onClick={() => setQty(qty + 1)} 
+                  className={styles.qtyBtn}
+                  aria-label="Increase quantity"
+                >
                   +
                 </button>
               </div>
@@ -354,7 +595,14 @@ export default function ProductContent() {
           <div className={styles.tabContent}>
             {activeTab === "desc" && (
               <div className="animateFadeUp">
-                <p>{detailedDesc}</p>
+                {isHtml(detailedDesc) ? (
+                  <div
+                    className={styles.descHtml}
+                    dangerouslySetInnerHTML={{ __html: detailedDesc }}
+                  />
+                ) : (
+                  <p>{detailedDesc}</p>
+                )}
                 <p style={{ marginTop: "1rem", opacity: 0.8 }}>
                   {lang === "ar"
                     ? "هذا المنتج مصمم بعناية فائقة ليلبي تطلعاتك ويلائم احتياجاتك اليومية. نضمن لك جودة عالية وخدمة عملاء على مدار الساعة."

@@ -70,14 +70,13 @@ export function getClassicHeroChrome(
   const buttonFromConfig = resolveIntroLocalized(config.buttonText, lang);
 
   const showImage =
-    appMode === "store" &&
     config.showHeroImage !== false &&
-    !!(config.heroImageUrl || slideImage || defaults.imageUrl);
+    !!(config.heroImageUrl || slideImage || (appMode === "store" ? defaults.imageUrl : undefined));
 
   return {
-    badge: badgeFromConfig || defaults.badge,
+    badge: badgeFromConfig || (config.showBadge !== false ? defaults.badge : ""),
     showBadge: config.showBadge !== false,
-    buttonText: buttonFromConfig || defaults.buttonText,
+    buttonText: buttonFromConfig || (config.showButton !== false ? defaults.buttonText : ""),
     buttonLink: config.buttonLink || defaults.buttonLink || "#",
     buttonBg: config.buttonBg,
     buttonTextColor: config.buttonTextColor,
@@ -86,7 +85,7 @@ export function getClassicHeroChrome(
     useGradientTitle: config.useGradientTitle !== false,
     showImage,
     imageUrl: config.heroImageUrl || slideImage || defaults.imageUrl,
-    showPrice: appMode === "store" && config.showPrice === true,
+    showPrice: config.showPrice === true,
     price: config.price ?? defaults.price,
     originalPrice: config.originalPrice ?? defaults.originalPrice,
     discountLabel: config.discountLabel || defaults.discountLabel,

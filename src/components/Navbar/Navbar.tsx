@@ -11,6 +11,32 @@ import { api, BASE_URL } from "@/services/api";
 import clientConfig from "@/config/clientConfig.json";
 import styles from "./Navbar.module.css";
 
+function parseColorHex(valueStr: string): string {
+  if (!valueStr) return '#888888';
+  const hexMatch = valueStr.match(/#([0-9a-fA-F]{3,8})/);
+  if (hexMatch) return hexMatch[0];
+  const lower = valueStr.toLowerCase().trim();
+  if (lower.includes('أحمر') || lower.includes('red')) return '#e53935';
+  if (lower.includes('أزرق') || lower.includes('blue')) return '#1e88e5';
+  if (lower.includes('كحلي') || lower.includes('navy')) return '#0d47a1';
+  if (lower.includes('أخضر') || lower.includes('green')) return '#43a047';
+  if (lower.includes('أصفر') || lower.includes('yellow')) return '#fdd835';
+  if (lower.includes('رمادي') || lower.includes('grey') || lower.includes('gray')) return '#757575';
+  if (lower.includes('أسود') || lower.includes('black')) return '#212121';
+  if (lower.includes('أبيض') || lower.includes('white')) return '#ffffff';
+  if (lower.includes('وردي') || lower.includes('pink')) return '#e91e63';
+  if (lower.includes('برتقالي') || lower.includes('orange')) return '#ff9800';
+  if (lower.includes('بني') || lower.includes('brown')) return '#795548';
+  if (lower.includes('بيج') || lower.includes('beige')) return '#f5f5dc';
+  if (lower.includes('بنفسجي') || lower.includes('purple')) return '#9c27b0';
+  return '#757575';
+}
+
+function isColorVariantGroup(name: string): boolean {
+  const norm = name.toLowerCase();
+  return norm.includes('لون') || norm.includes('الوان') || norm.includes('ألوان') || norm.includes('color') || norm.includes('colour');
+}
+
 export default function Navbar() {
   const {
     config,
@@ -275,15 +301,34 @@ export default function Navbar() {
       }
 
       // 2. Map items to OrderItemData[]
-      const orderItems = cart.map((item) => ({
-        id: item.product.id,
-        name: typeof item.product.name === "string" 
+      const orderItems = cart.map((item) => {
+        const baseName = typeof item.product.name === "string" 
           ? item.product.name 
-          : item.product.name?.[lang] || item.product.name?.ar || "",
-        quantity: item.quantity,
-        unitPrice: item.product.price,
-        totalPrice: item.product.price * item.quantity,
-      }));
+          : item.product.name?.[lang] || item.product.name?.ar || "";
+        
+        const variantParts: string[] = [];
+        if (item.product.additionalData?.selectedVariants) {
+          Object.entries(item.product.additionalData.selectedVariants).forEach(([k, v]) => {
+            variantParts.push(`${k}: ${v}`);
+          });
+        } else {
+          if (item.product.additionalData?.selectedColor) {
+            variantParts.push(`${lang === 'ar' ? 'اللون' : 'Color'}: ${item.product.additionalData.selectedColor}`);
+          }
+          if (item.product.additionalData?.selectedPriceOptionKey || item.product.additionalData?.selectedSize) {
+            variantParts.push(`${lang === 'ar' ? 'المقاس' : 'Size'}: ${item.product.additionalData.selectedPriceOptionKey || item.product.additionalData.selectedSize}`);
+          }
+        }
+
+        return {
+          id: item.product.id,
+          name: baseName,
+          description: variantParts.length > 0 ? variantParts.join(' | ') : undefined,
+          quantity: item.quantity,
+          unitPrice: item.product.price,
+          totalPrice: item.product.price * item.quantity,
+        };
+      });
 
       // 3. Compute final order price
       const orderTotal = Math.max(0, subtotal - sliceDiscount + finalShippingFee + vatAmount);
@@ -799,27 +844,48 @@ export default function Navbar() {
                         <h4>{nameStr}</h4>
                         
                         {/* Selected Specs */}
-                        <div className={styles.cartItemSpecsList} style={{ display: "flex", flexDirection: "column", gap: "2px", margin: "4px 0", fontSize: "0.82rem", opacity: 0.85 }}>
-                          {item.product.additionalData?.selectedPriceOptionKey && (
-                            <span>
-                              {lang === "ar" ? "المقاس/الخيار: " : "Option: "}
-                              <strong>{item.product.additionalData.selectedPriceOptionKey}</strong>
-                            </span>
-                          )}
-                          
-                          {item.product.additionalData?.selectedColor && (
-                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                              {lang === "ar" ? "اللون: " : "Color: "}
-                              <span style={{ 
-                                display: "inline-block", 
-                                width: "12px", 
-                                height: "12px", 
-                                borderRadius: "50%", 
-                                backgroundColor: item.product.additionalData.selectedColor,
-                                border: "1px solid var(--border)"
-                              }} />
-                              <strong>{item.product.additionalData.selectedColor}</strong>
-                            </span>
+                        <div className={styles.cartItemSpecsList} style={{ display: "flex", flexDirection: "column", gap: "3px", margin: "4px 0", fontSize: "0.82rem", opacity: 0.85 }}>
+                          {item.product.additionalData?.selectedVariants && Object.keys(item.product.additionalData.selectedVariants).length > 0 ? (
+                            Object.entries(item.product.additionalData.selectedVariants).map(([gName, val]) => (
+                              <span key={gName} style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                                <span style={{ opacity: 0.75 }}>{gName}:</span>
+                                {isColorVariantGroup(gName) && (
+                                  <span style={{ 
+                                    display: "inline-block", 
+                                    width: "12px", 
+                                    height: "12px", 
+                                    borderRadius: "50%", 
+                                    backgroundColor: parseColorHex(val),
+                                    border: "1px solid var(--border)"
+                                  }} />
+                                )}
+                                <strong>{val}</strong>
+                              </span>
+                            ))
+                          ) : (
+                            <>
+                              {item.product.additionalData?.selectedPriceOptionKey && (
+                                <span>
+                                  {lang === "ar" ? "المقاس/الخيار: " : "Option: "}
+                                  <strong>{item.product.additionalData.selectedPriceOptionKey}</strong>
+                                </span>
+                              )}
+                              
+                              {item.product.additionalData?.selectedColor && (
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                  {lang === "ar" ? "اللون: " : "Color: "}
+                                  <span style={{ 
+                                    display: "inline-block", 
+                                    width: "12px", 
+                                    height: "12px", 
+                                    borderRadius: "50%", 
+                                    backgroundColor: parseColorHex(item.product.additionalData.selectedColor),
+                                    border: "1px solid var(--border)"
+                                  }} />
+                                  <strong>{item.product.additionalData.selectedColor}</strong>
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -1306,6 +1372,15 @@ export default function Navbar() {
                           )}
                           <div className="summaryItemMeta">
                             <span className="summaryItemTitle">{nameStr}</span>
+                            {item.product.additionalData?.selectedVariants && Object.keys(item.product.additionalData.selectedVariants).length > 0 ? (
+                              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+                                {Object.entries(item.product.additionalData.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(' | ')}
+                              </span>
+                            ) : item.product.additionalData?.selectedColor || item.product.additionalData?.selectedSize ? (
+                              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
+                                {[item.product.additionalData.selectedColor, item.product.additionalData.selectedSize].filter(Boolean).join(' - ')}
+                              </span>
+                            ) : null}
                             <span className="summaryItemQty">x{item.quantity}</span>
                           </div>
                           <span className="summaryItemPrice">

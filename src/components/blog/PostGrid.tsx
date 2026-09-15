@@ -4,31 +4,45 @@ import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { BlogPost } from "@/types";
+import { stripHtml } from "@/utils/html";
 import styles from "./BlogComponents.module.css";
 
 interface PostGridProps {
   posts: BlogPost[];
-  displayMode?: "grid" | "list" | "slider" | "slide" | string;
+  displayMode?: "grid" | "list" | "slider" | "slide" | "horizontal_list" | "horizontal" | "scroll" | string;
 }
 
 export default function PostGrid({ posts, displayMode = "grid" }: PostGridProps) {
   const { lang, t, categories } = useApp();
 
+  const isSlider =
+    displayMode === "scroll" ||
+    displayMode === "slider" ||
+    displayMode === "slide" ||
+    displayMode === "horizontal_list" ||
+    displayMode === "horizontal";
+
   const modeClass =
     displayMode === "list"
       ? styles.listMode
-      : displayMode === "scroll" || displayMode === "slider" || displayMode === "slide"
+      : isSlider
       ? styles.sliderMode
       : "";
+
+  // Ensure only actual blog posts are rendered (exclude static pages and intros)
+  const validPosts = posts.filter((p) => p.postType !== "page" && p.postType !== "intro");
 
   return (
     <section className={styles.gridSection}>
       <div className={`${styles.postsGrid} ${modeClass}`}>
-        {posts.map((post, idx) => {
-          const titleStr = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+        {validPosts.map((post, idx) => {
+          const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+          const titleStr = stripHtml(rawTitle);
           const descObj = post.seoDescription || (post as any).description;
-          const descStr = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
-          const fallbackDesc = descStr || (typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "").slice(0, 100) + "...";
+          const rawDesc = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+          const rawContent = typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "";
+          const cleanDesc = stripHtml(rawDesc || rawContent);
+          const fallbackDesc = cleanDesc.length > 120 ? cleanDesc.slice(0, 120) + "..." : cleanDesc;
           
           const imgUrl = post.imageUrl || (post as any).image || "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800";
           

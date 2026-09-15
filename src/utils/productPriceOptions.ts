@@ -127,8 +127,15 @@ export function buildProductForCart(
 }
 
 export function getCartLineKey(product: Product): string {
-  const sizeKey = product.additionalData?.selectedPriceOptionKey || 'default';
-  return `${product.id}::${sizeKey}`;
+  const sizeKey = product.additionalData?.selectedPriceOptionKey || product.additionalData?.selectedSize || 'default';
+  const colorKey = product.additionalData?.selectedColor || '';
+  const variantsKey = product.additionalData?.selectedVariants
+    ? Object.entries(product.additionalData.selectedVariants)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}:${v}`)
+        .join('|')
+    : '';
+  return `${product.id}::${sizeKey}::${colorKey}::${variantsKey}`;
 }
 
 /** Pricing display for a cart line (product.price is already the discounted unit price). */

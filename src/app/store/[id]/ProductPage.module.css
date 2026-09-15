@@ -178,64 +178,123 @@
 .selectorGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.65rem;
   width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.selectorLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .selectorLabel {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  opacity: 0.8;
+  opacity: 0.9;
+}
+
+.selectedValueBadge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: color-mix(in srgb, var(--secondary) 10%, transparent);
+  padding: 0.15rem 0.6rem;
+  border-radius: 50px;
+  border: 1px solid color-mix(in srgb, var(--secondary) 25%, transparent);
 }
 
 .colorsRow {
   display: flex;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.colorSwatchWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .colorCircle {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 2px solid var(--border);
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-  transition: var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+.colorCircle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
 .activeColorCircle {
   transform: scale(1.15);
   border-color: var(--fg);
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--secondary);
+}
+
+.colorCheckmark {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
 .sizesRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .sizeChip {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--fg);
-  padding: 0.5rem 1.25rem;
+  padding: 0.55rem 1.1rem;
   border-radius: var(--radius-sm);
   font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .sizeChip:hover {
   border-color: var(--secondary);
   color: var(--secondary);
+  transform: translateY(-1px);
 }
 
 .activeSizeChip {
   background: var(--secondary);
   color: #fff;
   border-color: var(--secondary);
-  box-shadow: 0 4px 10px rgba(240, 80, 180, 0.2);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--secondary) 35%, transparent);
+  transform: translateY(-1px);
+}
+
+.chipModifier {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  margin-inline-start: 0.25rem;
 }
 
 /* Purchase Actions controller */
@@ -330,6 +389,36 @@
 
 .tabContent {
   padding: 2.5rem;
+}
+
+.descHtml {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--fg);
+}
+
+.descHtml p {
+  margin-bottom: 1rem;
+}
+
+.descHtml h1,
+.descHtml h2,
+.descHtml h3,
+.descHtml h4 {
+  color: var(--fg);
+  font-weight: 700;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.descHtml ul,
+.descHtml ol {
+  margin-bottom: 1rem;
+  padding-inline-start: 1.5rem;
+}
+
+.descHtml li {
+  margin-bottom: 0.35rem;
 }
 
 .specsTable {

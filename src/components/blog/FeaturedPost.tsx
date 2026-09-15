@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { BlogPost } from "@/types";
+import { stripHtml } from "@/utils/html";
 import styles from "./BlogComponents.module.css";
 
 interface FeaturedPostProps {
@@ -13,13 +14,16 @@ interface FeaturedPostProps {
 export default function FeaturedPost({ post }: FeaturedPostProps) {
   const { t, lang, categories } = useApp();
 
-  if (!post) return null;
+  if (!post || post.postType === "page" || post.postType === "intro") return null;
 
   // Resilient parsing
-  const titleStr = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+  const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
+  const titleStr = stripHtml(rawTitle);
   const descObj = post.seoDescription || (post as any).description;
-  const descStr = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
-  const fallbackDesc = descStr || (typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "").slice(0, 150) + "...";
+  const rawDesc = typeof descObj === "string" ? descObj : descObj?.[lang as any] || descObj?.ar || "";
+  const rawContent = typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "";
+  const cleanDesc = stripHtml(rawDesc || rawContent);
+  const fallbackDesc = cleanDesc.length > 180 ? cleanDesc.slice(0, 180) + "..." : cleanDesc;
   
   const imgUrl = post.imageUrl || (post as any).image || "https://images.unsplash.com/photo-1677442136019-21780efad99a?w=800";
   
