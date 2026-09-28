@@ -175,8 +175,9 @@ function HomepageContent() {
   const filteredProducts = products.filter((product) => {
     const matchesCategory = activeStoreCategory === "all" || product.categoryId === activeStoreCategory;
     
-    const nameText = typeof product.name === "string" ? product.name : product.name?.[lang] || product.name?.ar || "";
-    const descText = product.additionalData?.description || "";
+    const nameText = typeof product.name === "string" ? product.name : `${product.name?.[lang] || ''} ${product.name?.ar || ''} ${product.name?.en || ''}`;
+    const descRaw = product.description || product.additionalData?.description;
+    const descText = typeof descRaw === "string" ? descRaw : `${descRaw?.[lang] || ''} ${descRaw?.ar || ''} ${descRaw?.en || ''}`;
     
     const matchesSearch =
       searchQuery.trim() === "" ||

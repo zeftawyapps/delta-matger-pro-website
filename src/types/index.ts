@@ -72,9 +72,21 @@ export interface ProductOption {
   [key: string]: any;
 }
 
+export interface StoreCategory {
+  id: string;
+  name: string | LocalizedString;
+  organizationId?: string;
+  description?: string | LocalizedString;
+  imageUrl?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+  productCount?: number;
+}
+
 export interface Product {
   id: string;
   name: string | LocalizedString;
+  description?: string | LocalizedString;
   price: number;
   oldPrice?: number;
   unit?: string;
@@ -97,12 +109,12 @@ export interface Product {
   categoryId?: string;
   organizationId?: string;
   additionalData?: {
-    description?: string;
-    detailedDescription?: string;
+    description?: string | LocalizedString;
+    detailedDescription?: string | LocalizedString;
     isDetailedDescriptionHtml?: boolean | string;
-    usage?: string;
-    benefits?: string[];
-    ingredients?: string[];
+    usage?: string | LocalizedString;
+    benefits?: (string | LocalizedString)[];
+    ingredients?: (string | LocalizedString)[];
     isInsideOffer?: boolean | string;
     selectedPriceOptionKey?: string;
     selectedSize?: string;

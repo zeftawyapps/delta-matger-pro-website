@@ -227,9 +227,9 @@ export default function ProductContent() {
   }
 
   // Resilient parsing
-  const nameStr = typeof product.name === "string" ? product.name : product.name?.[lang] || product.name?.ar || "";
-  const descStr = product.additionalData?.description || (product as any).description?.[lang] || (product as any).description?.ar || "";
-  const detailedDesc = product.additionalData?.detailedDescription || descStr;
+  const nameStr = getLoc(product.name, lang);
+  const descStr = getLoc(product.description || product.additionalData?.description, lang);
+  const detailedDesc = getLoc(product.additionalData?.detailedDescription, lang) || descStr;
   
   const mainImgUrl = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
   

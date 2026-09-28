@@ -217,6 +217,7 @@ export function mapProductFromApi(raw: Record<string, any>): Product {
   return {
     id: raw.id || raw.productId || raw._id,
     name: raw.name || '',
+    description: raw.description ?? additionalData?.description,
     price: raw.price ?? 0,
     oldPrice: raw.oldPrice,
     unit: raw.unit || 'pcs',
