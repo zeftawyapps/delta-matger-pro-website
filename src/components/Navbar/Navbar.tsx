@@ -50,6 +50,7 @@ export default function Navbar() {
     setSearchQuery,
     cart,
     removeFromCart,
+    updateCartQuantity,
     currentUser,
     loginWithCredentials,
     loginWithPhone,
@@ -88,6 +89,8 @@ export default function Navbar() {
   // Checkout form states
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>("");
+  const [orderSuccessData, setOrderSuccessData] = useState<any | null>(null);
   const [checkoutName, setCheckoutName] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [checkoutGovernorate, setCheckoutGovernorate] = useState("");
@@ -278,6 +281,7 @@ export default function Navbar() {
 
   const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCheckoutError("");
     if (!authToken || !currentUser) {
       alert(lang === "ar" ? "يرجى تسجيل الدخول أولاً." : "Please log in first.");
       setLoginOpen(true);
@@ -352,7 +356,7 @@ export default function Navbar() {
       const calculationMode = orderSettings.calculationMode ?? 2;
       const orderMode = orderSettings.orderMode || "C2B";
 
-      await api.createOrder({
+      const createdOrder = await api.createOrder({
         organizationId: orgId,
         token: authToken,
         items: orderItems,
@@ -370,16 +374,18 @@ export default function Navbar() {
         orderMode,
       });
 
-      alert(lang === "ar" ? "تم إرسال الطلب بنجاح!" : "Order placed successfully!");
       clearCart();
-      setCheckoutOpen(false);
-      setCartOpen(false);
+      setOrderSuccessData({
+        orderId: (createdOrder as any)?.id || (createdOrder as any)?._id || `ORD-${Date.now().toString().slice(-6)}`,
+        total: orderTotal,
+        itemsCount: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+        recipientName: checkoutName,
+        recipientPhone: checkoutPhone,
+      });
     } catch (err: any) {
       console.error("Order submission failed:", err);
-      alert(lang === "ar" 
-        ? `فشل إرسال الطلب: ${err.message || "خطأ غير معروف"}` 
-        : `Order failed: ${err.message || "Unknown error"}`
-      );
+      const errMsg = err.message || (lang === "ar" ? "تعذر إرسال الطلب، يرجى المحاولة مرة أخرى." : "Could not place order, please try again.");
+      setCheckoutError(errMsg);
     } finally {
       setCheckoutLoading(false);
     }
@@ -817,17 +823,40 @@ export default function Navbar() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.cartHeader}>
-              <h3>🛍️ {t.cart} ({cartCount})</h3>
-              <button onClick={() => setCartOpen(false)} className={styles.closeBtn}>
+              <h3>
+                <span>🛍️</span>
+                <span>{t.cart}</span>
+                <span className={styles.cartCountBadge}>{cartCount}</span>
+              </h3>
+              <button 
+                onClick={() => setCartOpen(false)} 
+                className={styles.closeBtn}
+                aria-label={lang === "ar" ? "إغلاق السلة" : "Close Cart"}
+              >
                 ✕
               </button>
             </div>
 
             <div className={styles.cartItems}>
               {cart.length === 0 ? (
-                <div className={styles.emptyCart} style={{ flexDirection: "column", gap: "0.75rem" }}>
-                  <span style={{ fontSize: "2.5rem" }}>🛒</span>
-                  <p style={{ fontWeight: "600" }}>{t.cartEmpty}</p>
+                <div className={styles.emptyCart}>
+                  <div className={styles.emptyCartIcon}>🛒</div>
+                  <h4 style={{ margin: 0, fontWeight: 700 }}>{t.cartEmpty}</h4>
+                  <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.7 }}>
+                    {lang === "ar" 
+                      ? "لم تقم بإضافة أي منتجات إلى سلتك بعد." 
+                      : "You haven't added any products to your cart yet."}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setCartOpen(false);
+                      if (pathname !== "/store") router.push("/store");
+                    }}
+                    className="glowButton"
+                    style={{ marginTop: "0.5rem", padding: "0.5rem 1.25rem", fontSize: "0.9rem" }}
+                  >
+                    {lang === "ar" ? "تصفح المنتجات ➔" : "Browse Products ➔"}
+                  </button>
                 </div>
               ) : (
                 cart.map((item, index) => {
@@ -836,73 +865,99 @@ export default function Navbar() {
                     ? item.product.name
                     : item.product.name?.[lang] || item.product.name?.ar || "";
                   return (
-                    <div key={`${itemKey}-${index}`} className={styles.cartItem} style={{ background: "color-mix(in srgb, var(--surface) 60%, transparent)", padding: "0.85rem", borderRadius: "var(--radius-sm, 8px)", border: "1px solid var(--border)" }}>
+                    <div key={`${itemKey}-${index}`} className={styles.cartItem}>
                       {item.product.imageUrl && (
                         <img src={item.product.imageUrl} alt={nameStr} className={styles.cartItemImg} />
                       )}
                       <div className={styles.cartItemInfo}>
                         <h4>{nameStr}</h4>
                         
-                        {/* Selected Specs */}
-                        <div className={styles.cartItemSpecsList} style={{ display: "flex", flexDirection: "column", gap: "3px", margin: "4px 0", fontSize: "0.82rem", opacity: 0.85 }}>
+                        {/* Selected Specs Chips */}
+                        <div className={styles.cartItemSpecsList}>
                           {item.product.additionalData?.selectedVariants && Object.keys(item.product.additionalData.selectedVariants).length > 0 ? (
                             Object.entries(item.product.additionalData.selectedVariants).map(([gName, val]) => (
-                              <span key={gName} style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                                <span style={{ opacity: 0.75 }}>{gName}:</span>
+                              <span key={gName} className={styles.cartSpecChip}>
+                                <span style={{ opacity: 0.7 }}>{gName}:</span>
                                 {isColorVariantGroup(gName) && (
                                   <span style={{ 
                                     display: "inline-block", 
-                                    width: "12px", 
-                                    height: "12px", 
+                                    width: "10px", 
+                                    height: "10px", 
                                     borderRadius: "50%", 
                                     backgroundColor: parseColorHex(val),
                                     border: "1px solid var(--border)"
                                   }} />
                                 )}
-                                <strong>{val}</strong>
+                                <span>{val}</span>
                               </span>
                             ))
                           ) : (
                             <>
                               {item.product.additionalData?.selectedPriceOptionKey && (
-                                <span>
-                                  {lang === "ar" ? "المقاس/الخيار: " : "Option: "}
-                                  <strong>{item.product.additionalData.selectedPriceOptionKey}</strong>
+                                <span className={styles.cartSpecChip}>
+                                  <span style={{ opacity: 0.7 }}>{lang === "ar" ? "الخيار: " : "Option: "}</span>
+                                  <span>{item.product.additionalData.selectedPriceOptionKey}</span>
                                 </span>
                               )}
                               
                               {item.product.additionalData?.selectedColor && (
-                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                  {lang === "ar" ? "اللون: " : "Color: "}
+                                <span className={styles.cartSpecChip}>
+                                  <span style={{ opacity: 0.7 }}>{lang === "ar" ? "اللون: " : "Color: "}</span>
                                   <span style={{ 
                                     display: "inline-block", 
-                                    width: "12px", 
-                                    height: "12px", 
+                                    width: "10px", 
+                                    height: "10px", 
                                     borderRadius: "50%", 
                                     backgroundColor: parseColorHex(item.product.additionalData.selectedColor),
                                     border: "1px solid var(--border)"
                                   }} />
-                                  <strong>{item.product.additionalData.selectedColor}</strong>
+                                  <span>{item.product.additionalData.selectedColor}</span>
                                 </span>
                               )}
                             </>
                           )}
                         </div>
 
-                        {/* Price Details */}
-                        <div className={styles.cartItemPriceRow} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginTop: "6px" }}>
-                          <span style={{ fontSize: "0.82rem", opacity: 0.75, background: "var(--surface-hover)", padding: "2px 6px", borderRadius: "4px" }}>
-                            {item.quantity} x {formatPrice(item.product.price, organizationPolicy?.logistics?.currency, lang)}
-                          </span>
-                          <strong style={{ fontSize: "0.95rem", color: "var(--primary)" }}>
-                            {formatPrice(item.product.price * item.quantity, organizationPolicy?.logistics?.currency, lang)}
-                          </strong>
+                        {/* Stepper and Price Row */}
+                        <div className={styles.cartItemPriceRow}>
+                          <div className="cartStepper">
+                            <button
+                              type="button"
+                              className="cartStepperBtn"
+                              onClick={() => updateCartQuantity(itemKey, item.quantity - 1)}
+                              aria-label="Decrease quantity"
+                            >
+                              -
+                            </button>
+                            <span className="cartStepperCount">{item.quantity}</span>
+                            <button
+                              type="button"
+                              className="cartStepperBtn"
+                              onClick={() => updateCartQuantity(itemKey, item.quantity + 1)}
+                              aria-label="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                            <span className={styles.cartItemPriceTotal}>
+                              {formatPrice(item.product.price * item.quantity, organizationPolicy?.logistics?.currency, lang)}
+                            </span>
+                            {item.quantity > 1 && (
+                              <span className={styles.cartItemPriceSingle}>
+                                ({formatPrice(item.product.price, organizationPolicy?.logistics?.currency, lang)} / {lang === "ar" ? "قطعة" : "pc"})
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
+
                       <button
                         onClick={() => removeFromCart(itemKey)}
                         className={styles.cartItemRemove}
                         title={t.removeFromCart}
+                        aria-label={t.removeFromCart}
                       >
                         🗑
                       </button>
@@ -912,60 +967,82 @@ export default function Navbar() {
               )}
             </div>
 
-             {cart.length > 0 && (
-               <div className={styles.cartFooter}>
-                 {/* Breakdown Rows */}
-                 <div className={styles.cartSummaryRows}>
-                   <div className={styles.cartSummaryRow}>
-                     <span>{lang === "ar" ? "إجمالي المنتجات:" : "Subtotal:"}</span>
-                     <span>{formatPrice(subtotal, organizationPolicy?.logistics?.currency, lang)}</span>
-                   </div>
-                   
-                   {sliceDiscount > 0 && (
-                     <div className={styles.cartSummaryRow} style={{ color: "var(--accent)" }}>
-                       <span>🎁 {lang === "ar" ? "خصم الشريحة:" : "Slice Discount:"}</span>
-                       <span>-{formatPrice(sliceDiscount, organizationPolicy?.logistics?.currency, lang)}</span>
-                     </div>
-                   )}
+            {cart.length > 0 && (
+              <div className={styles.cartFooter}>
+                {/* Breakdown Rows */}
+                <div className={styles.cartSummaryRows}>
+                  <div className={styles.cartSummaryRow}>
+                    <span className={styles.cartSummaryRowLabel}>
+                      <span>🧾</span>
+                      <span>{lang === "ar" ? "إجمالي المنتجات:" : "Subtotal:"}</span>
+                    </span>
+                    <span className={styles.cartSummaryRowValue}>
+                      {formatPrice(subtotal, organizationPolicy?.logistics?.currency, lang)}
+                    </span>
+                  </div>
+                  
+                  {sliceDiscount > 0 && (
+                    <div className={styles.cartSummaryRow} style={{ color: "var(--accent)" }}>
+                      <span className={styles.cartSummaryRowLabel}>
+                        <span>🎁</span>
+                        <span>{lang === "ar" ? "خصم الشريحة المستحق:" : "Slice Discount:"}</span>
+                      </span>
+                      <span className={styles.cartSummaryRowValue}>
+                        -{formatPrice(sliceDiscount, organizationPolicy?.logistics?.currency, lang)}
+                      </span>
+                    </div>
+                  )}
 
-                   <div className={styles.cartSummaryRow}>
-                     <span>🚚 {lang === "ar" ? "الشحن التقديري:" : "Shipping:"}</span>
-                     <span>
-                       {shippingFee > 0 
-                         ? formatPrice(shippingFee, organizationPolicy?.logistics?.currency, lang)
-                         : (lang === "ar" ? "شحن مجاني" : "Free Shipping")}
-                     </span>
-                   </div>
+                  <div className={styles.cartSummaryRow}>
+                    <span className={styles.cartSummaryRowLabel}>
+                      <span>🚚</span>
+                      <span>{lang === "ar" ? "الشحن التقديري:" : "Estimated Shipping:"}</span>
+                    </span>
+                    <span className={styles.cartSummaryRowValue}>
+                      {shippingFee > 0 
+                        ? formatPrice(shippingFee, organizationPolicy?.logistics?.currency, lang)
+                        : (lang === "ar" ? "شحن مجاني" : "Free Shipping")}
+                    </span>
+                  </div>
 
-                   {enableVat && taxPercentage > 0 && (
-                     <div className={styles.cartSummaryRow}>
-                       <span>🧾 {lang === "ar" ? `ضريبة القيمة المضافة (${taxPercentage}%):` : `VAT (${taxPercentage}%):`}</span>
-                       <span>{formatPrice(vatAmount, organizationPolicy?.logistics?.currency, lang)}</span>
-                     </div>
-                   )}
-                 </div>
+                  {enableVat && taxPercentage > 0 && (
+                    <div className={styles.cartSummaryRow}>
+                      <span className={styles.cartSummaryRowLabel}>
+                        <span>📊</span>
+                        <span>{lang === "ar" ? `ضريبة القيمة المضافة (${taxPercentage}%):` : `VAT (${taxPercentage}%):`}</span>
+                      </span>
+                      <span className={styles.cartSummaryRowValue}>
+                        {formatPrice(vatAmount, organizationPolicy?.logistics?.currency, lang)}
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                 <div style={{ height: "1px", background: "var(--border)", margin: "0.75rem 0" }}></div>
+                <div style={{ height: "1px", background: "var(--border)", margin: "0.85rem 0" }} />
 
-                 <div className={styles.cartTotalRow}>
-                   <span>{t.total}:</span>
-                   <strong style={{ fontSize: "1.2rem", color: "var(--primary)" }}>
-                     {formatPrice(finalTotal, organizationPolicy?.logistics?.currency, lang)}
-                   </strong>
-                 </div>
-                 <button
-                   onClick={() => {
-                     if (!currentUser) {
-                       alert(lang === "ar" ? "يجب تسجيل الدخول أولاً لإتمام الطلب" : "Please log in first to complete the order");
-                       setLoginOpen(true);
-                     } else {
-                       setCheckoutOpen(true);
-                     }
-                   }}
-                   className="glowButton"
-                   style={{ width: "100%", justifyContent: "center", marginTop: "1rem", padding: "0.85rem", fontSize: "1rem" }}
-                 >
-                  🛒 {lang === "ar" ? "متابعة تأكيد الطلب ➔" : "Proceed to Checkout ➔"}
+                <div className={styles.cartTotalRow}>
+                  <span>{t.total}:</span>
+                  <strong className={styles.cartTotalAmount}>
+                    {formatPrice(finalTotal, organizationPolicy?.logistics?.currency, lang)}
+                  </strong>
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!currentUser) {
+                      alert(lang === "ar" ? "يجب تسجيل الدخول أولاً لإتمام الطلب" : "Please log in first to complete the order");
+                      setLoginOpen(true);
+                    } else {
+                      setCheckoutError("");
+                      setOrderSuccessData(null);
+                      setCheckoutOpen(true);
+                    }
+                  }}
+                  className="glowButton"
+                  style={{ width: "100%", justifyContent: "center", marginTop: "0.85rem", padding: "0.9rem", fontSize: "1.02rem" }}
+                >
+                  <span>🛒</span>
+                  <span>{lang === "ar" ? "متابعة تأكيد الطلب ➔" : "Proceed to Checkout ➔"}</span>
                 </button>
               </div>
             )}
@@ -1203,299 +1280,408 @@ export default function Navbar() {
 
       {/* Checkout Modal */}
       {checkoutOpen && (
-        <div className={styles.modalOverlay} onClick={() => setCheckoutOpen(false)}>
+        <div className={styles.modalOverlay} onClick={() => {
+          if (!checkoutLoading) {
+            setCheckoutOpen(false);
+            setOrderSuccessData(null);
+          }
+        }}>
           <div
             className={`${styles.loginModal} ${lang === "ar" ? styles.rtl : styles.ltr}`}
-            style={{ maxWidth: "840px", width: "95%" }}
+            style={{ maxWidth: "860px", width: "95%" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setCheckoutOpen(false)} className={styles.modalCloseBtn}>
+            <button 
+              onClick={() => {
+                setCheckoutOpen(false);
+                setOrderSuccessData(null);
+              }} 
+              className={styles.modalCloseBtn}
+              aria-label={lang === "ar" ? "إغلاق" : "Close"}
+            >
               ✕
             </button>
-            <h3 style={{ textAlign: "center", marginBottom: "0.25rem" }}>
-              🛒 {lang === "ar" ? "تأكيد تفاصيل الشحن والطلب" : "Confirm Shipping & Order Details"}
-            </h3>
-            <p style={{ textAlign: "center", fontSize: "0.88rem", opacity: 0.7, marginBottom: "1.25rem" }}>
-              {lang === "ar" 
-                ? "يرجى مراجعة وتأكيد عنوان الاستلام لحساب إجمالي الطلب شاملاً الشحن."
-                : "Please review and confirm your shipping address to calculate final total."}
-            </p>
 
-            <form onSubmit={handleCheckoutSubmit}>
-              <div className="checkoutGridContainer">
-                {/* Left Card: Customer & Shipping Information */}
-                <div className="checkoutSectionCard">
-                  <div className="checkoutSectionHeader">
-                    <span>📍</span>
-                    <span>{lang === "ar" ? "بيانات المستلم والتوصيل" : "Recipient & Delivery Info"}</span>
-                  </div>
-
-                  <div className="customInputGroup">
-                    <label className="inputLabel">
-                      <span className="labelIcon">👤</span>
-                      <span>{lang === "ar" ? "الاسم الكامل" : "Full Name"}</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={lang === "ar" ? "أدخل الاسم الكامل" : "Full Name"}
-                      value={checkoutName}
-                      onChange={(e) => setCheckoutName(e.target.value)}
-                      className="customInput"
-                    />
-                  </div>
-
-                  <div className="customInputGroup">
-                    <label className="inputLabel">
-                      <span className="labelIcon">📱</span>
-                      <span>{lang === "ar" ? "رقم الهاتف" : "Phone Number"}</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="010xxxxxx"
-                      value={checkoutPhone}
-                      onChange={(e) => setCheckoutPhone(e.target.value)}
-                      className="customInput"
-                    />
-                  </div>
-
-                  <div className="customInputGroup">
-                    <label className="inputLabel">
-                      <span className="labelIcon">🏛️</span>
-                      <span>{lang === "ar" ? "المحافظة" : "Governorate"}</span>
-                    </label>
-                    <select
-                      value={checkoutGovernorate}
-                      onChange={(e) => handleCheckoutGovChange(e.target.value)}
-                      className="customInput customSelect"
-                      required
-                    >
-                      <option value="">{lang === "ar" ? "-- اختر المحافظة --" : "-- Select Governorate --"}</option>
-                      {checkoutGovList.map((gov) => {
-                        const nameStr = typeof gov.name === "string" 
-                          ? gov.name 
-                          : gov.name?.[lang] || gov.name?.ar || gov.name?.en || gov.id;
-                        return (
-                          <option key={gov.id} value={gov.id}>
-                            {nameStr}
-                          </option>
-                        );
-                      })}
-                    </select>
-
-                    {/* Dynamic shipping hint badge */}
-                    {checkoutGovernorate && (
-                      <div className="shippingFeeHint">
-                        {(() => {
-                          let govFeeVal = 0;
-                          let isFree = false;
-                          if (organizationPolicy?.shipping) {
-                            isFree = organizationPolicy.shipping.freeShippingEnabled === true;
-                            if (!isFree) {
-                              govFeeVal = organizationPolicy.shipping.defaultFee || 0;
-                              if (organizationPolicy.shipping.feesByGovernorate) {
-                                const customFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
-                                if (typeof customFee === "number") govFeeVal = customFee;
-                              }
-                            }
-                          }
-                          return isFree || govFeeVal === 0
-                            ? (lang === "ar" ? "🚚 شحن مجاني لهذه المحافظة!" : "🚚 Free shipping for this governorate!")
-                            : (lang === "ar" 
-                                ? `🚚 تكلفة الشحن للمحافظة المحددة: ${formatPrice(govFeeVal, organizationPolicy?.logistics?.currency, lang)}`
-                                : `🚚 Shipping fee for this governorate: ${formatPrice(govFeeVal, organizationPolicy?.logistics?.currency, lang)}`);
-                        })()}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="customInputGroup">
-                    <label className="inputLabel">
-                      <span className="labelIcon">🏙️</span>
-                      <span>{lang === "ar" ? "المدينة" : "City"}</span>
-                    </label>
-                    <select
-                      value={checkoutCity}
-                      onChange={(e) => setCheckoutCity(e.target.value)}
-                      className="customInput customSelect"
-                      required
-                      disabled={!checkoutGovernorate}
-                    >
-                      <option value="">{lang === "ar" ? "-- اختر المدينة --" : "-- Select City --"}</option>
-                      {checkoutCityList.map((ct) => {
-                        const nameStr = typeof ct.name === "string" 
-                          ? ct.name 
-                          : ct.name?.[lang] || ct.name?.ar || ct.name?.en || ct.id;
-                        return (
-                          <option key={ct.id} value={ct.id}>
-                            {nameStr}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  <div className="customInputGroup">
-                    <label className="inputLabel">
-                      <span className="labelIcon">🏡</span>
-                      <span>{lang === "ar" ? "العنوان بالتفصيل" : "Detailed Address"}</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder={lang === "ar" ? "الشارع، رقم البناء، الشقة" : "Street, Building, Apartment"}
-                      value={checkoutAddress}
-                      onChange={(e) => setCheckoutAddress(e.target.value)}
-                      className="customInput"
-                    />
-                  </div>
+            {orderSuccessData ? (
+              /* Celebration Order Placed Successfully Screen */
+              <div className="orderSuccessCard">
+                <div className="orderSuccessIconWrapper">
+                  <span>✓</span>
+                </div>
+                
+                <h3 className="orderSuccessTitle">
+                  {lang === "ar" ? "🎉 تم استلام وتأكيد طلبك بنجاح!" : "🎉 Order Placed Successfully!"}
+                </h3>
+                
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  background: "color-mix(in srgb, var(--primary) 10%, transparent)",
+                  padding: "0.4rem 1rem",
+                  borderRadius: "20px",
+                  fontSize: "0.9rem",
+                  fontWeight: "700",
+                  color: "var(--primary)"
+                }}>
+                  <span>{lang === "ar" ? "رقم الطلب:" : "Order ID:"}</span>
+                  <span>#{orderSuccessData.orderId.toString().slice(-8).toUpperCase()}</span>
                 </div>
 
-                {/* Right Card: Order Items Summary & Billing Receipt */}
-                <div className="checkoutSummaryCard">
-                  <div className="checkoutSectionHeader">
-                    <span>🧾</span>
-                    <span>{lang === "ar" ? "ملخص الطلب والفاتورة" : "Order & Invoice Summary"}</span>
-                  </div>
+                <p className="orderSuccessSubtitle">
+                  {lang === "ar"
+                    ? `شكراً لثقتك بنا يا ${orderSuccessData.recipientName}. تم تسجيل طلبك المكون من (${orderSuccessData.itemsCount}) منتجات بإجمالي ${formatPrice(orderSuccessData.total, organizationPolicy?.logistics?.currency, lang)}، وسنتواصل معك قريباً على رقم ${orderSuccessData.recipientPhone} لتأكيد موعد التسليم.`
+                    : `Thank you for your order, ${orderSuccessData.recipientName}! Your order of (${orderSuccessData.itemsCount}) items with a total of ${formatPrice(orderSuccessData.total, organizationPolicy?.logistics?.currency, lang)} has been received. We will contact you soon on ${orderSuccessData.recipientPhone}.`}
+                </p>
 
-                  {/* Order Items List */}
-                  <div style={{ maxHeight: "180px", overflowY: "auto", paddingInlineEnd: "4px" }}>
-                    {cart.map((item, idx) => {
-                      const nameStr = typeof item.product.name === "string"
-                        ? item.product.name
-                        : item.product.name?.[lang] || item.product.name?.ar || "";
-                      return (
-                        <div key={idx} className="summaryItemRow">
-                          {item.product.imageUrl && (
-                            <img src={item.product.imageUrl} alt="" className="summaryItemImg" />
-                          )}
-                          <div className="summaryItemMeta">
-                            <span className="summaryItemTitle">{nameStr}</span>
-                            {item.product.additionalData?.selectedVariants && Object.keys(item.product.additionalData.selectedVariants).length > 0 ? (
-                              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                                {Object.entries(item.product.additionalData.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(' | ')}
-                              </span>
-                            ) : item.product.additionalData?.selectedColor || item.product.additionalData?.selectedSize ? (
-                              <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                                {[item.product.additionalData.selectedColor, item.product.additionalData.selectedSize].filter(Boolean).join(' - ')}
-                              </span>
-                            ) : null}
-                            <span className="summaryItemQty">x{item.quantity}</span>
-                          </div>
-                          <span className="summaryItemPrice">
-                            {formatPrice(item.product.price * item.quantity, organizationPolicy?.logistics?.currency, lang)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="orderSuccessActions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutOpen(false);
+                      setOrderSuccessData(null);
+                      setOrdersOpen(true);
+                    }}
+                    className="glowButton"
+                    style={{ flex: 1, justifyContent: "center", padding: "0.8rem", fontSize: "0.95rem" }}
+                  >
+                    <span>📦</span>
+                    <span>{lang === "ar" ? "عرض تفاصيل طلباتي" : "View My Orders"}</span>
+                  </button>
 
-                  {/* Available Discount Tiers Hint */}
-                  {slices.length > 0 && (
-                    <div style={{ 
-                      background: "color-mix(in srgb, var(--accent) 10%, transparent)", 
-                      border: "1px dashed var(--accent)",
-                      borderRadius: "var(--radius-sm, 6px)", 
-                      padding: "0.6rem 0.8rem", 
-                      fontSize: "0.8rem",
-                      color: "var(--fg)"
-                    }}>
-                      <div style={{ fontWeight: "700", marginBottom: "4px", color: "var(--primary)" }}>
-                        🎁 {lang === "ar" ? "عروض خصومات الفاتورة الحالية:" : "Current Invoice Tier Discounts:"}
-                      </div>
-                      <ul style={{ margin: 0, paddingInlineStart: "1.1rem" }}>
-                        {slices.map((slice, idx) => (
-                          <li key={idx}>
-                            {lang === "ar" 
-                              ? `خصم بقيمة ${formatPrice(slice.discountAmount, organizationPolicy?.logistics?.currency, lang)} عند الشراء بقيمة ${formatPrice(slice.minAmount, organizationPolicy?.logistics?.currency, lang)} أو أكثر!`
-                              : `Get ${formatPrice(slice.discountAmount, organizationPolicy?.logistics?.currency, lang)} OFF on orders of ${formatPrice(slice.minAmount, organizationPolicy?.logistics?.currency, lang)} or more!`
-                            }
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Billing review rows */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.88rem", marginTop: "0.25rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ opacity: 0.8 }}>{lang === "ar" ? "إجمالي المنتجات:" : "Products Total:"}</span>
-                      <strong>{formatPrice(subtotal, organizationPolicy?.logistics?.currency, lang)}</strong>
-                    </div>
-
-                    {sliceDiscount > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", color: "var(--accent)" }}>
-                        <span>🎁 {lang === "ar" ? "خصم الشريحة المستحق:" : "Slice Discount:"}</span>
-                        <strong>-{formatPrice(sliceDiscount, organizationPolicy?.logistics?.currency, lang)}</strong>
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ opacity: 0.8 }}>🚚 {lang === "ar" ? "رسوم الشحن للمحافظة:" : "Governorate Shipping:"}</span>
-                      <strong>
-                        {(() => {
-                          let tempShipping = 0;
-                          if (organizationPolicy?.shipping) {
-                            const isFree = organizationPolicy.shipping.freeShippingEnabled === true;
-                            if (!isFree) {
-                              tempShipping = organizationPolicy.shipping.defaultFee || 0;
-                              if (checkoutGovernorate && organizationPolicy.shipping.feesByGovernorate) {
-                                const govFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
-                                if (typeof govFee === "number") tempShipping = govFee;
-                              }
-                            }
-                          }
-                          return tempShipping > 0 
-                            ? formatPrice(tempShipping, organizationPolicy?.logistics?.currency, lang)
-                            : (lang === "ar" ? "مجاني" : "Free");
-                        })()}
-                      </strong>
-                    </div>
-
-                    {enableVat && taxPercentage > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ opacity: 0.8 }}>🧾 {lang === "ar" ? `ضريبة القيمة المضافة (${taxPercentage}%):` : `VAT (${taxPercentage}%):`}</span>
-                        <strong>{formatPrice(vatAmount, organizationPolicy?.logistics?.currency, lang)}</strong>
-                      </div>
-                    )}
-
-                    {/* Final Grand Total Card */}
-                    <div className="finalTotalCard">
-                      <span className="finalTotalTitle">{lang === "ar" ? "المبلغ الإجمالي النهائي:" : "Final Total:"}</span>
-                      <span className="finalTotalAmount">
-                        {(() => {
-                          let tempShipping = 0;
-                          if (organizationPolicy?.shipping) {
-                            const isFree = organizationPolicy.shipping.freeShippingEnabled === true;
-                            if (!isFree) {
-                              tempShipping = organizationPolicy.shipping.defaultFee || 0;
-                              if (checkoutGovernorate && organizationPolicy.shipping.feesByGovernorate) {
-                                const govFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
-                                if (typeof govFee === "number") tempShipping = govFee;
-                              }
-                            }
-                          }
-                          const newTotal = Math.max(0, subtotal - sliceDiscount + tempShipping + vatAmount);
-                          return formatPrice(newTotal, organizationPolicy?.logistics?.currency, lang);
-                        })()}
-                      </span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={checkoutLoading}
-                      className="glowButton"
-                      style={{ width: "100%", justifyContent: "center", marginTop: "0.75rem", padding: "0.85rem", fontSize: "1rem" }}
-                    >
-                      {checkoutLoading 
-                        ? (lang === "ar" ? "⏳ جاري إرسال الطلب..." : "⏳ Sending order...")
-                        : (lang === "ar" ? "🔒 تأكيد وإرسال الطلب" : "🔒 Confirm & Place Order")}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCheckoutOpen(false);
+                      setOrderSuccessData(null);
+                      setCartOpen(false);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "0.8rem",
+                      fontSize: "0.95rem",
+                      borderRadius: "var(--radius-sm, 8px)",
+                      border: "1px solid var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--fg)",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    {lang === "ar" ? "متابعة التسوق ➔" : "Continue Shopping ➔"}
+                  </button>
                 </div>
               </div>
-            </form>
+            ) : (
+              /* Standard Checkout Review and Shipping Form */
+              <>
+                <h3 style={{ textAlign: "center", marginBottom: "0.25rem", fontSize: "1.35rem", fontWeight: "800" }}>
+                  <span>🛒</span> {lang === "ar" ? "تأكيد تفاصيل الشحن والطلب" : "Confirm Shipping & Order Details"}
+                </h3>
+                <p style={{ textAlign: "center", fontSize: "0.88rem", opacity: 0.75, marginBottom: "1.25rem" }}>
+                  {lang === "ar" 
+                    ? "يرجى مراجعة وتأكيد عنوان الاستلام لحساب إجمالي الطلب شاملاً الشحن بدقة."
+                    : "Please review and confirm your shipping address to calculate final total accurately."}
+                </p>
+
+                {checkoutError && (
+                  <div className="inlineErrorBanner" style={{ marginBottom: "1rem" }}>
+                    <span>⚠️</span>
+                    <span>{checkoutError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleCheckoutSubmit}>
+                  <div className="checkoutGridContainer">
+                    {/* Left Card: Customer & Shipping Information */}
+                    <div className="checkoutSectionCard">
+                      <div className="checkoutSectionHeader">
+                        <span>📍</span>
+                        <span>{lang === "ar" ? "بيانات المستلم والتوصيل" : "Recipient & Delivery Info"}</span>
+                      </div>
+
+                      <div className="customInputGroup">
+                        <label className="inputLabel">
+                          <span className="labelIcon">👤</span>
+                          <span>{lang === "ar" ? "الاسم الكامل" : "Full Name"}</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder={lang === "ar" ? "مثال: أحمد محمد علي" : "e.g. John Doe"}
+                          value={checkoutName}
+                          onChange={(e) => setCheckoutName(e.target.value)}
+                          className="customInput"
+                        />
+                      </div>
+
+                      <div className="customInputGroup">
+                        <label className="inputLabel">
+                          <span className="labelIcon">📱</span>
+                          <span>{lang === "ar" ? "رقم الهاتف للتواصل" : "Phone Number"}</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="010xxxxxx"
+                          value={checkoutPhone}
+                          onChange={(e) => setCheckoutPhone(e.target.value)}
+                          className="customInput"
+                        />
+                      </div>
+
+                      <div className="customInputGroup">
+                        <label className="inputLabel">
+                          <span className="labelIcon">🏛️</span>
+                          <span>{lang === "ar" ? "المحافظة" : "Governorate"}</span>
+                        </label>
+                        <select
+                          value={checkoutGovernorate}
+                          onChange={(e) => handleCheckoutGovChange(e.target.value)}
+                          className="customInput customSelect"
+                          required
+                        >
+                          <option value="">{lang === "ar" ? "-- اختر المحافظة --" : "-- Select Governorate --"}</option>
+                          {checkoutGovList.map((gov) => {
+                            const nameStr = typeof gov.name === "string" 
+                              ? gov.name 
+                              : gov.name?.[lang] || gov.name?.ar || gov.name?.en || gov.id;
+                            return (
+                              <option key={gov.id} value={gov.id}>
+                                {nameStr}
+                              </option>
+                            );
+                          })}
+                        </select>
+
+                        {/* Dynamic shipping hint badge */}
+                        {checkoutGovernorate && (
+                          <div className="shippingFeeHint">
+                            {(() => {
+                              let govFeeVal = 0;
+                              let isFree = false;
+                              if (organizationPolicy?.shipping) {
+                                isFree = organizationPolicy.shipping.freeShippingEnabled === true;
+                                if (!isFree) {
+                                  govFeeVal = organizationPolicy.shipping.defaultFee || 0;
+                                  if (organizationPolicy.shipping.feesByGovernorate) {
+                                    const customFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
+                                    if (typeof customFee === "number") govFeeVal = customFee;
+                                  }
+                                }
+                              }
+                              return isFree || govFeeVal === 0
+                                ? (lang === "ar" ? "✨ شحن مجاني لهذه المحافظة!" : "✨ Free shipping for this governorate!")
+                                : (lang === "ar" 
+                                    ? `🚚 رسوم الشحن للمحافظة المحددة: ${formatPrice(govFeeVal, organizationPolicy?.logistics?.currency, lang)}`
+                                    : `🚚 Shipping fee for this governorate: ${formatPrice(govFeeVal, organizationPolicy?.logistics?.currency, lang)}`);
+                            })()}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="customInputGroup">
+                        <label className="inputLabel">
+                          <span className="labelIcon">🏙️</span>
+                          <span>{lang === "ar" ? "المدينة / المركز" : "City / District"}</span>
+                        </label>
+                        <select
+                          value={checkoutCity}
+                          onChange={(e) => setCheckoutCity(e.target.value)}
+                          className="customInput customSelect"
+                          required
+                          disabled={!checkoutGovernorate}
+                        >
+                          <option value="">{lang === "ar" ? "-- اختر المدينة --" : "-- Select City --"}</option>
+                          {checkoutCityList.map((ct) => {
+                            const nameStr = typeof ct.name === "string" 
+                              ? ct.name 
+                              : ct.name?.[lang] || ct.name?.ar || ct.name?.en || ct.id;
+                            return (
+                              <option key={ct.id} value={ct.id}>
+                                {nameStr}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div className="customInputGroup">
+                        <label className="inputLabel">
+                          <span className="labelIcon">🏡</span>
+                          <span>{lang === "ar" ? "العنوان بالتفصيل" : "Detailed Address"}</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder={lang === "ar" ? "اسم الشارع، رقم العمارة، الشقة، علامة مميزة" : "Street, Building, Apartment, Landmark"}
+                          value={checkoutAddress}
+                          onChange={(e) => setCheckoutAddress(e.target.value)}
+                          className="customInput"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Right Card: Order Items Summary & Billing Receipt */}
+                    <div className="checkoutSummaryCard">
+                      <div className="checkoutSectionHeader">
+                        <span>🧾</span>
+                        <span>{lang === "ar" ? "ملخص الطلب والفاتورة" : "Order & Invoice Summary"}</span>
+                      </div>
+
+                      {/* Order Items List */}
+                      <div style={{ maxHeight: "170px", overflowY: "auto", paddingInlineEnd: "4px" }}>
+                        {cart.map((item, idx) => {
+                          const nameStr = typeof item.product.name === "string"
+                            ? item.product.name
+                            : item.product.name?.[lang] || item.product.name?.ar || "";
+                          return (
+                            <div key={idx} className="summaryItemRow">
+                              {item.product.imageUrl && (
+                                <img src={item.product.imageUrl} alt="" className="summaryItemImg" />
+                              )}
+                              <div className="summaryItemMeta">
+                                <span className="summaryItemTitle">{nameStr}</span>
+                                {item.product.additionalData?.selectedVariants && Object.keys(item.product.additionalData.selectedVariants).length > 0 ? (
+                                  <span style={{ fontSize: "0.75rem", opacity: 0.75 }}>
+                                    {Object.entries(item.product.additionalData.selectedVariants).map(([k, v]) => `${k}: ${v}`).join(' | ')}
+                                  </span>
+                                ) : item.product.additionalData?.selectedColor || item.product.additionalData?.selectedSize ? (
+                                  <span style={{ fontSize: "0.75rem", opacity: 0.75 }}>
+                                    {[item.product.additionalData.selectedColor, item.product.additionalData.selectedSize].filter(Boolean).join(' - ')}
+                                  </span>
+                                ) : null}
+                                <span className="summaryItemQty">
+                                  {lang === "ar" ? `الكمية: ${item.quantity}` : `Qty: ${item.quantity}`}
+                                </span>
+                              </div>
+                              <span className="summaryItemPrice">
+                                {formatPrice(item.product.price * item.quantity, organizationPolicy?.logistics?.currency, lang)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Available Discount Tiers Banner */}
+                      {slices.length > 0 && (
+                        <div className="rewardsTierBanner">
+                          <div className="rewardsTierBannerTitle">
+                            <span>🎁</span>
+                            <span>{lang === "ar" ? "عروض شرائح الخصم النشطة:" : "Active Tier Discounts:"}</span>
+                          </div>
+                          <ul style={{ margin: 0, paddingInlineStart: "1.2rem", lineHeight: 1.5 }}>
+                            {slices.map((slice, idx) => (
+                              <li key={idx}>
+                                {lang === "ar" 
+                                  ? `خصم ${formatPrice(slice.discountAmount, organizationPolicy?.logistics?.currency, lang)} عند الشراء بقيمة ${formatPrice(slice.minAmount, organizationPolicy?.logistics?.currency, lang)} أو أكثر`
+                                  : `Get ${formatPrice(slice.discountAmount, organizationPolicy?.logistics?.currency, lang)} OFF on orders of ${formatPrice(slice.minAmount, organizationPolicy?.logistics?.currency, lang)}+`
+                                }
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Billing review rows */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem", fontSize: "0.88rem", marginTop: "0.25rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ opacity: 0.85 }}>{lang === "ar" ? "إجمالي المنتجات:" : "Products Total:"}</span>
+                          <strong style={{ whiteSpace: "nowrap" }}>{formatPrice(subtotal, organizationPolicy?.logistics?.currency, lang)}</strong>
+                        </div>
+
+                        {sliceDiscount > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--accent)" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <span>🎁</span>
+                              <span>{lang === "ar" ? "خصم الشريحة المستحق:" : "Slice Discount:"}</span>
+                            </span>
+                            <strong style={{ whiteSpace: "nowrap" }}>-{formatPrice(sliceDiscount, organizationPolicy?.logistics?.currency, lang)}</strong>
+                          </div>
+                        )}
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ opacity: 0.85, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            <span>🚚</span>
+                            <span>{lang === "ar" ? "رسوم الشحن للمحافظة:" : "Governorate Shipping:"}</span>
+                          </span>
+                          <strong style={{ whiteSpace: "nowrap" }}>
+                            {(() => {
+                              let tempShipping = 0;
+                              if (organizationPolicy?.shipping) {
+                                const isFree = organizationPolicy.shipping.freeShippingEnabled === true;
+                                if (!isFree) {
+                                  tempShipping = organizationPolicy.shipping.defaultFee || 0;
+                                  if (checkoutGovernorate && organizationPolicy.shipping.feesByGovernorate) {
+                                    const govFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
+                                    if (typeof govFee === "number") tempShipping = govFee;
+                                  }
+                                }
+                              }
+                              return tempShipping > 0 
+                                ? formatPrice(tempShipping, organizationPolicy?.logistics?.currency, lang)
+                                : (lang === "ar" ? "مجاني" : "Free");
+                            })()}
+                          </strong>
+                        </div>
+
+                        {enableVat && taxPercentage > 0 && (
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ opacity: 0.85, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <span>🧾</span>
+                              <span>{lang === "ar" ? `ضريبة القيمة المضافة (${taxPercentage}%):` : `VAT (${taxPercentage}%):`}</span>
+                            </span>
+                            <strong style={{ whiteSpace: "nowrap" }}>{formatPrice(vatAmount, organizationPolicy?.logistics?.currency, lang)}</strong>
+                          </div>
+                        )}
+
+                        {/* Final Grand Total Card (Never Breaking Currency) */}
+                        <div className="finalTotalCard">
+                          <span className="finalTotalTitle">{lang === "ar" ? "المبلغ الإجمالي النهائي:" : "Final Grand Total:"}</span>
+                          <span className="finalTotalAmount">
+                            {(() => {
+                              let tempShipping = 0;
+                              if (organizationPolicy?.shipping) {
+                                const isFree = organizationPolicy.shipping.freeShippingEnabled === true;
+                                if (!isFree) {
+                                  tempShipping = organizationPolicy.shipping.defaultFee || 0;
+                                  if (checkoutGovernorate && organizationPolicy.shipping.feesByGovernorate) {
+                                    const govFee = organizationPolicy.shipping.feesByGovernorate[checkoutGovernorate];
+                                    if (typeof govFee === "number") tempShipping = govFee;
+                                  }
+                                }
+                              }
+                              const newTotal = Math.max(0, subtotal - sliceDiscount + tempShipping + vatAmount);
+                              return formatPrice(newTotal, organizationPolicy?.logistics?.currency, lang);
+                            })()}
+                          </span>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={checkoutLoading}
+                          className="glowButton"
+                          style={{ width: "100%", justifyContent: "center", marginTop: "0.75rem", padding: "0.9rem", fontSize: "1.02rem" }}
+                        >
+                          {checkoutLoading ? (
+                            <>
+                              <span>⏳</span>
+                              <span>{lang === "ar" ? "جاري تأكيد وإرسال الطلب..." : "Placing your order..."}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🔒</span>
+                              <span>{lang === "ar" ? "تأكيد وإرسال الطلب الآن" : "Confirm & Place Order Now"}</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

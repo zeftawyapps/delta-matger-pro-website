@@ -14,7 +14,7 @@ export function formatPrice(price: number, currencyCode?: string, lang: "ar" | "
       EUR: "يورو",
     };
     const symbol = symbolMap[currency] || currency;
-    return `${price.toFixed(2)} ${symbol}`;
+    return `${price.toFixed(2)}\u00A0${symbol}`;
   } else {
     const symbolMap: Record<string, string> = {
       USD: "$",
@@ -27,6 +27,6 @@ export function formatPrice(price: number, currencyCode?: string, lang: "ar" | "
     if (symbol === "$" || symbol === "€") {
       return `${symbol}${price.toFixed(2)}`;
     }
-    return `${price.toFixed(2)} ${symbol}`;
+    return `${price.toFixed(2)}\u00A0${symbol}`;
   }
 }

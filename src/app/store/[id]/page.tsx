@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import { formatPrice } from "@/utils/currency";
 import { isHtml } from "@/utils/html";
+import { getFullImageUrl } from "@/services/api";
 import { Product, ProductVariant, ProductVariantOption, ProductPriceOption } from "@/types";
 import styles from "./ProductPage.module.css";
 
@@ -85,48 +86,6 @@ export default function ProductContent() {
   const [activeTab, setActiveTab] = useState("desc");
   const [added, setAdded] = useState(false);
 
-  // Dynamic reviews list
-  const [reviewsList, setReviewsList] = useState([
-    {
-      name: lang === "ar" ? "محمد صالح" : "Mohamed Saleh",
-      stars: 5,
-      text: lang === "ar"
-        ? "منتج ممتاز وتوصيل سريع للغاية! الجودة مذهلة وتستحق التجربة."
-        : "Excellent product and super fast shipping! The quality is amazing.",
-      date: "2026-06-18"
-    },
-    {
-      name: lang === "ar" ? "سارة مراد" : "Sarah Mourad",
-      stars: 4,
-      text: lang === "ar"
-        ? "جميل جداً ويعمل بشكل ممتاز، العيب الوحيد أن الشحن استغرق 4 أيام بدلاً من يومين."
-        : "Very beautiful and works perfectly. The only downside is shipping took 4 days.",
-      date: "2026-06-15"
-    }
-  ]);
-  const [reviewName, setReviewName] = useState("");
-  const [reviewText, setReviewText] = useState("");
-  const [reviewStars, setReviewStars] = useState(5);
-  const [reviewSuccess, setReviewSuccess] = useState(false);
-
-  const handleReviewSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (reviewName.trim() && reviewText.trim()) {
-      const newReview = {
-        name: reviewName,
-        stars: reviewStars,
-        text: reviewText,
-        date: new Date().toISOString().split("T")[0]
-      };
-      setReviewsList([newReview, ...reviewsList]);
-      setReviewName("");
-      setReviewText("");
-      setReviewStars(5);
-      setReviewSuccess(true);
-      setTimeout(() => setReviewSuccess(false), 3000);
-    }
-  };
-
   // Extract all available variants from product
   const variantsList: ProductVariant[] = useMemo(() => {
     if (!product) return [];
@@ -167,7 +126,8 @@ export default function ProductContent() {
   // Sync initial selections on mount or product change
   useEffect(() => {
     if (product) {
-      const mainImg = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
+      const rawMainImg = product.imageUrl || (product as any).image || product.imageUrls?.[0] || "";
+      const mainImg = getFullImageUrl(rawMainImg);
       let initialImg = mainImg;
 
       // Initialize default selections for each variant group
@@ -179,7 +139,7 @@ export default function ProductContent() {
             const firstOpt = vg.options[0];
             const optLabel = getLoc(firstOpt.value, lang) || getLoc(firstOpt.value, 'ar');
             const cleanLbl = cleanOptionLabel(optLabel);
-            const firstImg = firstOpt.imageUrls && firstOpt.imageUrls.length > 0 ? firstOpt.imageUrls[0] : undefined;
+            const firstImg = firstOpt.imageUrls && firstOpt.imageUrls.length > 0 ? getFullImageUrl(firstOpt.imageUrls[0]) : undefined;
             
             initVariants[gName] = {
               groupName: gName,
@@ -211,6 +171,61 @@ export default function ProductContent() {
     }
   }, [product, variantsList, lang]);
 
+  // Specifications calculation strictly based on actual backend data
+  const catObj = useMemo(() => {
+    if (!product) return null;
+    return productCategories.find((c) => c.id === product.categoryId);
+  }, [product, productCategories]);
+
+  const catLabel = catObj ? (typeof catObj.name === "string" ? catObj.name : catObj.name?.[lang] || catObj.name?.ar || "") : "";
+
+  const specsList: { name: string; value: string }[] = useMemo(() => {
+    if (!product) return [];
+    const list: { name: string; value: string }[] = [];
+
+    // 1. Raw specs from product or additionalData
+    const rawSpecs = (product as any).specs || (product as any).additionalData?.specs || (product as any).additionalData?.specifications;
+    if (Array.isArray(rawSpecs) && rawSpecs.length > 0) {
+      rawSpecs.forEach((s: any) => {
+        const sName = getLoc(s.name || s.key || s.title, lang);
+        const sVal = getLoc(s.value || s.val, lang);
+        if (sName && sVal) {
+          list.push({ name: sName, value: String(sVal) });
+        }
+      });
+    } else if (rawSpecs && typeof rawSpecs === "object") {
+      Object.entries(rawSpecs).forEach(([k, v]) => {
+        const sVal = getLoc(v, lang);
+        if (k && sVal) {
+          list.push({ name: k, value: String(sVal) });
+        }
+      });
+    }
+
+    // 2. Unit (if explicitly set)
+    if (product.unit && !list.some((s) => s.name === (lang === "ar" ? "الوحدة" : "Unit"))) {
+      list.push({ name: lang === "ar" ? "الوحدة" : "Unit", value: product.unit });
+    }
+
+    // 3. Category (if available)
+    if (catLabel && !list.some((s) => s.name === (lang === "ar" ? "القسم" : "Category"))) {
+      list.push({ name: lang === "ar" ? "القسم" : "Category", value: catLabel });
+    }
+
+    // 4. Variants list summary
+    if (variantsList.length > 0) {
+      variantsList.forEach((vg) => {
+        const gTitle = getLoc(vg.name, lang);
+        const optsStr = vg.options.map((opt) => cleanOptionLabel(getLoc(opt.value, lang))).filter(Boolean).join(", ");
+        if (gTitle && optsStr && !list.some((s) => s.name === gTitle)) {
+          list.push({ name: gTitle, value: optsStr });
+        }
+      });
+    }
+
+    return list;
+  }, [product, lang, catLabel, variantsList]);
+
   if (!product) {
     return (
       <div className={styles.wrapper}>
@@ -231,47 +246,29 @@ export default function ProductContent() {
   const descStr = getLoc(product.description || product.additionalData?.description, lang);
   const detailedDesc = getLoc(product.additionalData?.detailedDescription, lang) || descStr;
   
-  const mainImgUrl = product.imageUrl || (product as any).image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
+  const rawMainImg = product.imageUrl || (product as any).image || product.imageUrls?.[0] || "";
+  const mainImgUrl = getFullImageUrl(rawMainImg);
   
   // Gallery collection: main image + gallery + variant images
   const gallery: string[] = [];
-  if (product.imageUrls && product.imageUrls.length > 0) {
-    product.imageUrls.forEach((img) => {
-      if (img && !gallery.includes(img)) gallery.push(img);
-    });
-  } else {
-    gallery.push(mainImgUrl);
-  }
-  if (gallery.length === 0) {
-    gallery.push("https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600");
-  }
-
-  const ratingVal = (product as any).rating || 5;
-  const reviewsVal = ((product as any).reviewsCount || 15) + (reviewsList.length - 2);
-
-  const catObj = productCategories.find((c) => c.id === product.categoryId);
-  const catLabel = catObj ? (typeof catObj.name === "string" ? catObj.name : catObj.name?.[lang] || catObj.name?.ar || "") : "";
-
-  // Dynamic specifications
-  const specsList = (product as any).specs?.[lang] || [
-    { name: lang === "ar" ? "الوحدة" : "Unit", value: product.unit || "pcs" },
-    { name: lang === "ar" ? "الحالة" : "Condition", value: product.isNew ? (lang === "ar" ? "جديد" : "New") : (lang === "ar" ? "مستعمل نظيف" : "Like New") }
+  const sourceImages = [
+    ...(Array.isArray(product.imageUrls) ? product.imageUrls : []),
+    ...(Array.isArray(product.images) ? product.images : []),
   ];
 
-  // Add variants info to specifications
-  if (variantsList.length > 0) {
-    variantsList.forEach((vg) => {
-      const gTitle = getLoc(vg.name, lang);
-      const optsStr = vg.options.map((opt) => cleanOptionLabel(getLoc(opt.value, lang))).join(", ");
-      if (gTitle && optsStr) {
-        specsList.push({ name: gTitle, value: optsStr });
-      }
-    });
+  sourceImages.forEach((img) => {
+    const full = getFullImageUrl(img);
+    if (full && !gallery.includes(full)) gallery.push(full);
+  });
+
+  if (mainImgUrl && !gallery.includes(mainImgUrl)) {
+    gallery.unshift(mainImgUrl);
   }
 
   // Calculate prices with modifiers
   const baseUnitPrice = selectedPriceOption ? selectedPriceOption.price : product.price;
   const baseOldPrice = selectedPriceOption ? selectedPriceOption.oldPrice : product.oldPrice;
+  const productDiscount = product.discount;
 
   // Sum of price modifiers across all selected variants
   const totalModifiers = Object.values(selectedVariants).reduce(
@@ -279,14 +276,22 @@ export default function ProductContent() {
     0
   );
 
-  const activePrice = Math.max(0, baseUnitPrice + totalModifiers);
-  const activeOldPrice = baseOldPrice != null && baseOldPrice > 0 ? Math.max(0, baseOldPrice + totalModifiers) : undefined;
+  let activePrice = Math.max(0, baseUnitPrice + totalModifiers);
+  let activeOldPrice = baseOldPrice != null && baseOldPrice > 0 ? Math.max(0, baseOldPrice + totalModifiers) : undefined;
+  let discountPercent = 0;
+  let hasDiscount = false;
 
-  // Calculate discount percentage
-  const hasDiscount = activeOldPrice != null && activeOldPrice > activePrice;
-  const discountPercent = hasDiscount 
-    ? Math.round(((activeOldPrice - activePrice) / activeOldPrice) * 100) 
-    : 0;
+  if (activeOldPrice != null && activeOldPrice > activePrice) {
+    hasDiscount = true;
+    discountPercent = Math.round(((activeOldPrice - activePrice) / activeOldPrice) * 100);
+  } else if (productDiscount != null && productDiscount > 0) {
+    hasDiscount = true;
+    discountPercent = productDiscount;
+    if (activeOldPrice == null || activeOldPrice <= activePrice) {
+      activeOldPrice = activePrice;
+      activePrice = Math.round((activePrice * (1 - productDiscount / 100)) * 100) / 100;
+    }
+  }
 
   // Handle selecting a variant option
   const handleSelectVariantOption = (
@@ -296,7 +301,7 @@ export default function ProductContent() {
     const gName = getLoc(vg.name, lang) || getLoc(vg.name, 'ar') || 'Variant';
     const optLabel = getLoc(opt.value, lang) || getLoc(opt.value, 'ar');
     const cleanLbl = cleanOptionLabel(optLabel);
-    const img = opt.imageUrls && opt.imageUrls.length > 0 ? opt.imageUrls[0] : undefined;
+    const img = opt.imageUrls && opt.imageUrls.length > 0 ? getFullImageUrl(opt.imageUrls[0]) : undefined;
 
     setSelectedVariants((prev) => ({
       ...prev,
@@ -341,6 +346,7 @@ export default function ProductContent() {
       imageUrl: activeImg || product.imageUrl,
       price: activePrice,
       oldPrice: activeOldPrice,
+      discount: discountPercent || product.discount,
       additionalData: {
         ...product.additionalData,
         selectedColor: selectedColor || undefined,
@@ -376,53 +382,59 @@ export default function ProductContent() {
           {/* Photo Gallery Column */}
           <div className={styles.galleryCol}>
             <div className={`${styles.mainImgWrapper} glassCard`}>
-              <img src={activeImg || mainImgUrl} alt={nameStr} className={styles.mainImg} />
+              {hasDiscount && discountPercent > 0 && (
+                <span className={styles.imgDiscountBadge}>
+                  -{discountPercent}%
+                </span>
+              )}
+              <img
+                src={activeImg || mainImgUrl || (gallery.length > 0 ? gallery[0] : "")}
+                alt={nameStr}
+                className={styles.mainImg}
+                onError={(e) => {
+                  if (mainImgUrl && e.currentTarget.src !== mainImgUrl) {
+                    e.currentTarget.src = mainImgUrl;
+                  }
+                }}
+              />
             </div>
-            <div className={styles.thumbnailsRow}>
-              {gallery.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveImg(img)}
-                  className={`${styles.thumbBtn} glassCard ${activeImg === img ? styles.activeThumb : ""}`}
-                >
-                  <img src={img} alt="Product Thumbnail" />
-                </button>
-              ))}
-            </div>
+            {gallery.length > 1 && (
+              <div className={styles.thumbnailsRow}>
+                {gallery.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveImg(img)}
+                    className={`${styles.thumbBtn} glassCard ${(activeImg || mainImgUrl) === img ? styles.activeThumb : ""}`}
+                  >
+                    <img
+                      src={img}
+                      alt={nameStr}
+                      onError={(e) => {
+                        (e.currentTarget.parentElement as HTMLElement)?.style?.setProperty('display', 'none');
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Purchasing Options Column */}
           <div className={styles.optionsCol}>
             {catLabel && <span className={styles.categoryBadge}>{catLabel}</span>}
             <h1>{nameStr}</h1>
-            
-            {/* Rating Stars */}
-            <div className={styles.ratingRow}>
-              <span className={styles.stars}>{"★".repeat(Math.floor(ratingVal)) + "☆".repeat(5 - Math.floor(ratingVal))}</span>
-              <strong>{ratingVal}</strong>
-              <span className={styles.reviewsCount}>({reviewsVal} {t.reviews})</span>
-            </div>
 
             {/* Price */}
             <div className={styles.priceRow}>
               <span className={styles.priceLabel}>{t.price}:</span>
               <span className={styles.priceVal}>{formatPrice(activePrice * qty, organizationPolicy?.logistics?.currency, lang)}</span>
-              {activeOldPrice && activeOldPrice > activePrice && (
-                <span style={{ textDecoration: "line-through", opacity: 0.5, marginInlineStart: "0.5rem" }}>
+              {hasDiscount && activeOldPrice && activeOldPrice > activePrice && (
+                <span className={styles.oldPriceVal}>
                   {formatPrice(activeOldPrice * qty, organizationPolicy?.logistics?.currency, lang)}
                 </span>
               )}
-              {hasDiscount && (
-                <span className={styles.discountBadge} style={{
-                  background: "var(--color-accent, #ecc951)",
-                  color: "var(--color-text-on-primary, #1a2332)",
-                  padding: "0.25rem 0.6rem",
-                  borderRadius: "var(--radius-sm, 6px)",
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
-                  marginInlineStart: "0.75rem",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)"
-                }}>
+              {hasDiscount && discountPercent > 0 && (
+                <span className={styles.discountBadge}>
                   {lang === "ar" ? `خصم ${discountPercent}%` : `${discountPercent}% OFF`}
                 </span>
               )}
@@ -436,7 +448,6 @@ export default function ProductContent() {
             {variantsList.map((vg, vIdx) => {
               const gName = getLoc(vg.name, lang) || getLoc(vg.name, 'ar') || `Variant ${vIdx + 1}`;
               const isColor = isColorVariantGroup(gName) || isColorVariantGroup(getLoc(vg.name, 'en'));
-              const isSize = isSizeVariantGroup(gName) || isSizeVariantGroup(getLoc(vg.name, 'en'));
               const selectedState = selectedVariants[gName];
 
               if (isColor) {
@@ -569,26 +580,20 @@ export default function ProductContent() {
           </div>
         </div>
 
-        {/* Dynamic Detail Tabs */}
+        {/* Detail Tabs (Description & Specifications only) */}
         <div className={`${styles.tabsContainer} glassCard`}>
           <div className={styles.tabsHeader}>
             <button
               onClick={() => setActiveTab("desc")}
               className={`${styles.tabBtn} ${activeTab === "desc" ? styles.activeTabBtn : ""}`}
             >
-              {t.description}
+              {t.description || (lang === "ar" ? "الوصف والتفاصيل" : "Description")}
             </button>
             <button
               onClick={() => setActiveTab("specs")}
               className={`${styles.tabBtn} ${activeTab === "specs" ? styles.activeTabBtn : ""}`}
             >
-              {t.specifications}
-            </button>
-            <button
-              onClick={() => setActiveTab("reviews")}
-              className={`${styles.tabBtn} ${activeTab === "reviews" ? styles.activeTabBtn : ""}`}
-            >
-              {t.reviews} ({reviewsVal})
+              {t.specifications || (lang === "ar" ? "المواصفات" : "Specifications")}
             </button>
           </div>
 
@@ -601,103 +606,35 @@ export default function ProductContent() {
                     dangerouslySetInnerHTML={{ __html: detailedDesc }}
                   />
                 ) : (
-                  <p>{detailedDesc}</p>
+                  <p>{detailedDesc || (lang === "ar" ? "لا يوجد وصف إضافي متوفر حالياً لهذا المنتج." : "No additional description available.")}</p>
                 )}
-                <p style={{ marginTop: "1rem", opacity: 0.8 }}>
-                  {lang === "ar"
-                    ? "هذا المنتج مصمم بعناية فائقة ليلبي تطلعاتك ويلائم احتياجاتك اليومية. نضمن لك جودة عالية وخدمة عملاء على مدار الساعة."
-                    : "This product is meticulously engineered to meet and exceed your expectations. We guarantee robust quality and reliable support."}
-                </p>
               </div>
             )}
 
             {activeTab === "specs" && (
               <div className="animateFadeUp">
-                <table className={styles.specsTable}>
-                  <thead>
-                    <tr>
-                      <th>{t.specName}</th>
-                      <th>{t.specValue}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {specsList.map((spec: any, idx: number) => (
-                      <tr key={idx}>
-                        <td>{spec.name}</td>
-                        <td>{spec.value}</td>
+                {specsList.length > 0 ? (
+                  <table className={styles.specsTable}>
+                    <thead>
+                      <tr>
+                        <th>{t.specName || (lang === "ar" ? "المواصفة" : "Specification")}</th>
+                        <th>{t.specValue || (lang === "ar" ? "القيمة" : "Value")}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <div className="animateFadeUp" style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
-                <div className={styles.reviewsList}>
-                  {reviewsList.map((rev, index) => (
-                    <div key={index} className={styles.reviewItem}>
-                      <div className={styles.reviewHeader}>
-                        <strong>{rev.name}</strong>
-                        <div>
-                          <span className={styles.reviewStars}>{"★".repeat(rev.stars) + "☆".repeat(5 - rev.stars)}</span>
-                          <span style={{ fontSize: "0.8rem", opacity: 0.5, marginInlineStart: "0.5rem" }}>{rev.date}</span>
-                        </div>
-                      </div>
-                      <p>{rev.text}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Write a Review form */}
-                <div className={styles.addReviewBox}>
-                  <h3>{lang === "ar" ? "أضف تقييمك للمنتج" : "Write a Review"}</h3>
-                  <form onSubmit={handleReviewSubmit} className={styles.reviewForm}>
-                    <div className={styles.ratingSelectRow}>
-                      <span>{lang === "ar" ? "تقييمك بالنجوم:" : "Your Rating:"}</span>
-                      <div className={styles.ratingStarsSelect}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={() => setReviewStars(star)}
-                            className={`${styles.starBtn} ${reviewStars >= star ? styles.activeStar : ""}`}
-                            aria-label={`Rate ${star} stars`}
-                          >
-                            ★
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className={styles.formRow}>
-                      <input
-                        type="text"
-                        required
-                        placeholder={lang === "ar" ? "الاسم الكريم" : "Your Name"}
-                        value={reviewName}
-                        onChange={(e) => setReviewName(e.target.value)}
-                        className="customInput"
-                      />
-                    </div>
-                    <textarea
-                      required
-                      rows={3}
-                      placeholder={lang === "ar" ? "اكتب تعليقك وتقييمك هنا..." : "Write your review comment here..."}
-                      value={reviewText}
-                      onChange={(e) => setReviewText(e.target.value)}
-                      className="customInput"
-                      style={{ resize: "vertical" }}
-                    />
-                    {reviewSuccess && (
-                      <p className={styles.successMsg}>
-                        🎉 {lang === "ar" ? "تم نشر تقييمك بنجاح! شكراً لك." : "Review submitted successfully! Thank you."}
-                      </p>
-                    )}
-                    <button type="submit" className="glowButton">
-                      {lang === "ar" ? "نشر التقييم" : "Submit Review"}
-                    </button>
-                  </form>
-                </div>
+                    </thead>
+                    <tbody>
+                      {specsList.map((spec, idx) => (
+                        <tr key={idx}>
+                          <td>{spec.name}</td>
+                          <td>{spec.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p style={{ opacity: 0.7 }}>
+                    {lang === "ar" ? "لا توجد مواصفات إضافية مسجلة لهذا المنتج." : "No additional specifications recorded for this product."}
+                  </p>
+                )}
               </div>
             )}
           </div>

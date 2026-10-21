@@ -100,6 +100,7 @@ export interface Product {
   hasMultipleSizes?: boolean;
   imageUrl?: string;
   imageUrls?: string[];
+  images?: string[];
   isActive?: boolean;
   isNew?: boolean;
   isBestSeller?: boolean;

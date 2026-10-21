@@ -16,6 +16,8 @@ interface JokerPostProps {
     fullScreen?: boolean;
     imageCount?: number;
     margin?: number;
+    boxedLayout?: boolean;
+    hasShadow?: boolean;
   };
 }
 
@@ -29,9 +31,22 @@ export default function JokerPost({ post, posts, title, description, config }: J
 
   if (activePosts.length === 0) return null;
 
-  const isFullScreen = config?.fullScreen !== false;
+  const isFullScreen = config?.fullScreen === true;
+  const isZeroMargin = config?.margin === 0;
+  const isMulti = activePosts.length > 1;
 
-  const renderCard = (p: BlogPost, isMulti: boolean) => {
+  // Custom margin styling if specified
+  const customSectionStyle: React.CSSProperties = {};
+  if (config?.margin !== undefined) {
+    customSectionStyle.margin = `${config.margin}px auto`;
+    if (config.margin === 0) {
+      customSectionStyle.padding = 0;
+      customSectionStyle.maxWidth = "100%";
+      customSectionStyle.width = "100%";
+    }
+  }
+
+  const renderCard = (p: BlogPost, multi: boolean) => {
     const rawTitle = typeof p.title === "string" ? p.title : p.title?.[lang as any] || p.title?.ar || "";
     const titleStr = stripHtml(rawTitle);
     const descObj = p.seoDescription || (p as any).description;
@@ -49,21 +64,27 @@ export default function JokerPost({ post, posts, title, description, config }: J
       day: "numeric",
     }) : "";
 
-    const readingTime = (p as any).readTime || 5;
+    const plainText = stripHtml(rawContent || rawDesc);
+    const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+    const readingTime = (p as any).readTime || (wordCount > 0 ? Math.max(1, Math.ceil(wordCount / 220)) : 5);
 
     const categoryObj = categories.find((c) => c.id === p.blogCategoryId);
     const categoryName = categoryObj ? (categoryObj.name?.[lang as any] || categoryObj.name?.ar || "") : "";
 
+    const cardHeightClass = multi
+      ? isFullScreen
+        ? styles.jokerMultiCardFullScreen
+        : styles.jokerMultiCard
+      : isFullScreen
+      ? styles.jokerFullScreen
+      : styles.jokerSplitCard;
+
+    const edgeRadiusClass = isFullScreen && isZeroMargin ? styles.jokerCardFullScreenEdge : "";
+
     return (
       <div
         key={p.id}
-        className={`${styles.jokerCard} ${
-          isMulti
-            ? styles.jokerMultiCard
-            : isFullScreen
-            ? styles.jokerFullScreen
-            : styles.jokerSplitCard
-        }`}
+        className={`${styles.jokerCard} ${cardHeightClass} ${edgeRadiusClass}`}
       >
         <img src={imgUrl} alt={titleStr} className={styles.jokerBgImage} />
         <div className={styles.jokerOverlay} />
@@ -73,12 +94,28 @@ export default function JokerPost({ post, posts, title, description, config }: J
               ⚡ {categoryName || (lang === "ar" ? "مقال مميز" : "Featured Article")}
             </span>
           </div>
-          <h2 className={isMulti ? styles.jokerMultiTitle : styles.jokerTitle}>{titleStr}</h2>
-          <p className={styles.jokerDesc}>{fallbackDesc}</p>
+          <h2 className={multi ? styles.jokerMultiTitle : styles.jokerTitle}>{titleStr}</h2>
+          {fallbackDesc && <p className={styles.jokerDesc}>{fallbackDesc}</p>}
           <div className={styles.jokerFooter}>
             <div className={styles.metaRow} style={{ color: "rgba(255, 255, 255, 0.85)" }}>
-              {dateStr && <span>📅 {dateStr}</span>}
-              <span>⏱ {readingTime} {t.minsRead}</span>
+              {dateStr && (
+                <span className={styles.cardMetaItem}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                    <line x1="16" x2="16" y1="2" y2="6"/>
+                    <line x1="8" x2="8" y1="2" y2="6"/>
+                    <line x1="3" x2="21" y1="10" y2="10"/>
+                  </svg>
+                  {dateStr}
+                </span>
+              )}
+              <span className={styles.cardMetaItem}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                {readingTime} {t.minsRead}
+              </span>
             </div>
             <Link href={`/blog/${p.slug}`} className="glowButton">
               {lang === "ar" ? "اقرأ المقال ←" : "Read Article →"}
@@ -89,18 +126,20 @@ export default function JokerPost({ post, posts, title, description, config }: J
     );
   };
 
-  const isMulti = activePosts.length > 1;
+  const sectionClass = `${styles.jokerSection} ${
+    isFullScreen || isZeroMargin ? styles.jokerSectionFullScreen : ""
+  } animateFadeUp`;
 
   return (
-    <section className={`${styles.jokerSection} animateFadeUp`}>
+    <section className={sectionClass} style={customSectionStyle}>
       {(title || description) && (
-        <div className={styles.jokerHeader}>
+        <div className={isFullScreen && isZeroMargin ? styles.jokerHeaderContainer : styles.jokerHeader}>
           {title && <h2 className={styles.sectionTitle}>{title}</h2>}
           {description && <p className={styles.sectionSubtitle}>{description}</p>}
         </div>
       )}
       {isMulti ? (
-        <div className={styles.jokerMultiGrid}>
+        <div className={`${styles.jokerMultiGrid} ${isFullScreen && isZeroMargin ? styles.jokerMultiGridFullScreen : ""}`}>
           {activePosts.map((p) => renderCard(p, true))}
         </div>
       ) : (

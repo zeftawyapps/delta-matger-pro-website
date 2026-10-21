@@ -23,11 +23,6 @@ export default function CategoryGrid({
 
   const presets = [
     {
-      id: "all",
-      title: { ar: "الكل", en: "All Products" },
-      image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300"
-    },
-    {
       id: "electronics",
       title: { ar: "الإلكترونيات", en: "Electronics" },
       image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300"
@@ -44,23 +39,16 @@ export default function CategoryGrid({
     }
   ];
 
-  const displayList = [
-    {
-      id: "all",
-      title: { ar: "الكل", en: "All Products" },
-      image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300"
-    },
-    ...productCategories.map((c) => {
-      const nameStr = typeof c.name === "string" ? c.name : c.name?.[lang] || c.name?.ar || "";
-      return {
-        id: c.id,
-        title: { ar: nameStr, en: nameStr },
-        image: c.imageUrl || c.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
-      };
-    })
-  ];
+  const displayList = productCategories.map((c) => {
+    const nameStr = typeof c.name === "string" ? c.name : c.name?.[lang] || c.name?.ar || "";
+    return {
+      id: c.id,
+      title: { ar: nameStr, en: nameStr },
+      image: c.imageUrl || c.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
+    };
+  });
 
-  const finalCategories = displayList.length > 1 ? displayList : presets;
+  const finalCategories = displayList.length > 0 ? displayList : presets;
 
   return (
     <section className={`${styles.categorySection} animateFadeUp`}>

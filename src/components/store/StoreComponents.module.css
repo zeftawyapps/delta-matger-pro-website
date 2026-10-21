@@ -61,6 +61,7 @@
   line-height: 1.15;
   background: linear-gradient(135deg, var(--fg) 40%, var(--secondary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -237,7 +238,7 @@
 .productSection {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1.5rem 2.5rem;
   width: 100%;
 }
 
@@ -245,6 +246,13 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .productsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -253,11 +261,30 @@
   }
 }
 
+@media (max-width: 480px) {
+  .productsGrid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
 .productCard {
   display: flex;
   flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 18px) !important;
   overflow: hidden;
-  border-radius: var(--radius-md) !important;
+  box-shadow: 0 4px 20px -2px var(--shadow);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+  height: 100%;
+  position: relative;
+}
+
+.productCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px -6px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .productLink {
@@ -265,6 +292,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  text-decoration: none;
 }
 
 .productImgWrapper {
@@ -272,33 +300,91 @@
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--surface) 95%, transparent), color-mix(in srgb, var(--border) 35%, transparent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .productImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: var(--transition-smooth);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
 }
 
 .productCard:hover .productImg {
-  transform: scale(1.05);
+  transform: scale(1.08);
 }
 
-.saleBadge {
+.productImgFallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
+  background: color-mix(in srgb, var(--border) 25%, transparent);
+  color: var(--fg);
+  opacity: 0.7;
+}
+
+.fallbackIcon {
+  font-size: 2.4rem;
+}
+
+.fallbackText {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgesContainer {
   position: absolute;
   top: 0.75rem;
   inset-inline-start: 0.75rem;
-  background: var(--secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.productBadge {
   color: #fff;
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 50px;
+  font-size: 0.72rem;
   font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badgeDiscount {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.badgeBestSeller {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.badgeNew {
+  background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .productBody {
-  padding: 1.25rem;
+  padding: 1.15rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -306,73 +392,122 @@
 }
 
 .productCat {
-  font-size: 0.75rem;
-  opacity: 0.5;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--primary);
+  opacity: 0.85;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .productTitle {
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.4;
+  color: var(--fg);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.6lh;
+  min-height: 2.8em;
+  transition: color 0.2s ease;
+  word-break: break-word;
+}
+
+.productCard:hover .productTitle {
+  color: var(--primary);
 }
 
 .ratingRow {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   font-size: 0.8rem;
+  margin-top: 0.15rem;
 }
 
-.stars {
-  color: #ffb703;
+.starsWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #f59e0b;
 }
 
-.ratingText {
-  opacity: 0.5;
+.ratingScore {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--fg);
+}
+
+.ratingCount {
+  opacity: 0.55;
+  font-size: 0.76rem;
 }
 
 .priceRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.75rem;
+  margin-top: auto;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding-top: 0.85rem;
+  gap: 0.5rem;
+}
+
+.priceCol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .productPrice {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--secondary);
+  font-size: 1.18rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--secondary, #7850dc));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.productOldPrice {
+  font-size: 0.82rem;
+  text-decoration: line-through;
+  opacity: 0.5;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .quickAddBtn {
-  background: var(--secondary);
-  color: #fff;
-  border: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition-smooth);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
 }
 
 .quickAddBtn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 10px rgba(240, 80, 180, 0.3);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #ffffff;
+  border-color: transparent;
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
 .quickAddBtn.added {
-  background: var(--accent);
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
 }
 
 /* 4. Promoted Offers countdown */

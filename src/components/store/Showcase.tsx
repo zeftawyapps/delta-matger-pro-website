@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { getFullImageUrl } from "@/services/api";
 import styles from "./StoreComponents.module.css";
 
 interface ShowcaseTab {
@@ -13,9 +14,10 @@ interface ShowcaseProps {
   tabs?: ShowcaseTab[];
   title?: string;
   description?: string;
+  displayMode?: string;
 }
 
-export default function Showcase({ tabs, title, description }: ShowcaseProps) {
+export default function Showcase({ tabs, title, description, displayMode = "tabs" }: ShowcaseProps) {
   const { lang } = useApp();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -29,7 +31,17 @@ export default function Showcase({ tabs, title, description }: ShowcaseProps) {
   if (displayTabs.length === 0) return null;
 
   const currentTab = displayTabs[activeTab] || displayTabs[0];
-  const imageUrl = currentTab.imageUrl;
+  const imageUrl = getFullImageUrl(currentTab.imageUrl);
+
+  const isSlider = displayMode === "slider" || displayMode === "slide" || displayMode === "scroll";
+
+  const nextSlide = () => {
+    setActiveTab((prev) => (prev + 1) % displayTabs.length);
+  };
+
+  const prevSlide = () => {
+    setActiveTab((prev) => (prev - 1 + displayTabs.length) % displayTabs.length);
+  };
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
@@ -49,18 +61,78 @@ export default function Showcase({ tabs, title, description }: ShowcaseProps) {
               className={`${styles.tabButton} ${activeTab === index ? styles.tabButtonActive : ""}`}
               onClick={() => setActiveTab(index)}
             >
-              {resolveText(tab.label)}
+              {resolveText(tab.label) || `${lang === "ar" ? "شريحة" : "Slide"} ${index + 1}`}
             </button>
           ))}
         </div>
 
         <div className={`${styles.showcaseImageWrapper} glassCard`}>
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={resolveText(currentTab.label)}
-              className={styles.showcaseImage}
-            />
+            <div style={{ position: "relative", width: "100%", height: "100%" }}>
+              <img
+                key={imageUrl}
+                src={imageUrl}
+                alt={resolveText(currentTab.label)}
+                className={styles.showcaseImage}
+                loading="lazy"
+              />
+              {isSlider && displayTabs.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={prevSlide}
+                    aria-label="Previous slide"
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      insetInlineStart: "1rem",
+                      transform: "translateY(-50%)",
+                      background: "rgba(0,0,0,0.5)",
+                      color: "#fff",
+                      border: "none",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      fontSize: "1.2rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backdropFilter: "blur(4px)",
+                      zIndex: 3
+                    }}
+                  >
+                    {lang === "ar" ? "›" : "‹"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextSlide}
+                    aria-label="Next slide"
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      insetInlineEnd: "1rem",
+                      transform: "translateY(-50%)",
+                      background: "rgba(0,0,0,0.5)",
+                      color: "#fff",
+                      border: "none",
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      fontSize: "1.2rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backdropFilter: "blur(4px)",
+                      zIndex: 3
+                    }}
+                  >
+                    {lang === "ar" ? "‹" : "›"}
+                  </button>
+                </>
+              )}
+            </div>
           ) : (
             <div className={styles.showcasePlaceholder}>
               <span>🖼️</span>

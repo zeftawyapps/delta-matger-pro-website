@@ -34,6 +34,7 @@ import Link from "next/link";
 import IntroSlides from "@/components/intro/IntroSlides";
 import { getIntroConfigFromSection, normalizeIntroDisplayMode } from "@/utils/introConfig";
 import { isHtml, stripHtml } from "@/utils/html";
+import { getFullImageUrl } from "@/services/api";
 import styles from "./Home.module.css";
 
 function HomepageContent() {
@@ -431,7 +432,7 @@ function HomepageContent() {
       const buttonText = section.config?.buttonText || (lang === "ar" ? "تصفح الآن" : "Browse Now");
       const buttonLink = section.config?.buttonLink || section.config?.linkUrl || "/store";
       
-      const bannerBgImage = isImgUrlActualLink ? configImgUrl : "";
+      const bannerBgImage = isImgUrlActualLink ? getFullImageUrl(configImgUrl) : "";
 
       if (variant === "offers_box") {
         return wrapInLayout(
@@ -587,6 +588,7 @@ function HomepageContent() {
           tabs={section.config?.tabs}
           title={section.title}
           description={section.description}
+          displayMode={section.displayMode}
         />
       );
     }
