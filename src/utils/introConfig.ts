@@ -21,7 +21,63 @@ export function getIntroConfigFromSection(
   if (sType !== "intro_slides" && sType !== "intro" && sType !== "hero") return {};
 
   const key = INTRO_KEY_BY_MODE[appMode] ?? "introBlog";
-  return (section.config?.[key] as IntroSlideConfig) ?? {};
+  const modeConfig = (section.config?.[key] as IntroSlideConfig) ?? {};
+
+  const rootConfig: Partial<IntroSlideConfig> = {
+    backgroundType: (section.config as any)?.backgroundType,
+    customBg: (section.config as any)?.customBg ?? (section.config as any)?.background,
+    textColor: (section.config as any)?.textColor,
+    buttonText: (section.config as any)?.buttonText,
+    buttonLink: (section.config as any)?.buttonLink ?? (section.config as any)?.linkUrl,
+    fallbackTitle: (section.config as any)?.fallbackTitle,
+    fallbackDescription: (section.config as any)?.fallbackDescription,
+    buttonBg: (section.config as any)?.buttonBg,
+    buttonTextColor: (section.config as any)?.buttonTextColor,
+    buttonBackgroundType: (section.config as any)?.buttonBackgroundType,
+    badgeText: (section.config as any)?.badgeText,
+    badgeBg: (section.config as any)?.badgeBg,
+    badgeTextColor: (section.config as any)?.badgeTextColor,
+    slideSource: (section.config as any)?.slideSource ?? (section.config as any)?.contentSource,
+    contentSource: (section.config as any)?.contentSource ?? (section.config as any)?.slideSource,
+    displayStyle: (section.config as any)?.displayStyle,
+    useGradientTitle: (section.config as any)?.useGradientTitle,
+    showGlow: (section.config as any)?.showGlow,
+    showBadge: (section.config as any)?.showBadge,
+    buttonShape: (section.config as any)?.buttonShape,
+    showButtonArrow: (section.config as any)?.showButtonArrow,
+    showButton: (section.config as any)?.showButton,
+    showHeroImage: (section.config as any)?.showHeroImage,
+  };
+
+  // Build clean merged config: modeConfig takes priority, but empty strings do NOT clobber rootConfig
+  const merged: IntroSlideConfig = { ...rootConfig };
+  for (const [k, v] of Object.entries(modeConfig)) {
+    if (v !== "" && v !== null && v !== undefined) {
+      (merged as any)[k] = v;
+    } else if ((merged as any)[k] === undefined && v !== undefined) {
+      (merged as any)[k] = v;
+    }
+  }
+
+  // AUTO-TRANSFORMATION & HEALING (as requested by user):
+  // 1. If buttonTextColor contains a gradient:
+  //    The user intended this gradient for the button background! Transfer it to buttonBg!
+  if (isGradientColor(merged.buttonTextColor)) {
+    if (!isGradientColor(merged.buttonBg)) {
+      merged.buttonBg = merged.buttonTextColor;
+    }
+    merged.buttonBackgroundType = "gradient";
+    merged.buttonTextColor = "#FFFFFF";
+  } else if (isGradientColor(merged.buttonBg)) {
+    merged.buttonBackgroundType = "gradient";
+  }
+
+  // 2. If customBg contains a gradient, ensure backgroundType is "gradient"
+  if (isGradientColor(merged.customBg)) {
+    merged.backgroundType = "gradient";
+  }
+
+  return merged;
 }
 
 /**
@@ -71,7 +127,7 @@ export function normalizeIntroDisplayMode(displayMode?: string): "grid" | "slide
 }
 
 export function isGradientColor(value?: string): boolean {
-  return !!value && value.includes("linear-gradient");
+  return !!value && (value.includes("gradient") || value.includes("linear-gradient") || value.includes("radial-gradient"));
 }
 
 /** CSS for solid or gradient intro text (stored in textColor). */

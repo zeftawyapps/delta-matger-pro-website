@@ -19,6 +19,11 @@ export interface BlogPost {
   blogCategoryId?: string;
   organizationId: string;
   relatedProducts: string[];
+  linkedProductId?: string;
+  ctaButtonText?: LocalizedString | string;
+  ctaButtonLink?: string;
+  ctaLinkTarget?: string;
+  campaignId?: string;
   imageUrl?: string;
   isActive: boolean;
   coreKey?: string;
@@ -212,11 +217,19 @@ export interface IntroSlideConfig {
   showGlow?: boolean;
   showBadge?: boolean;
   badgeText?: string | Record<string, string>;
+  badgeBg?: string;
+  badgeTextColor?: string;
+  /** Fallback decorative intro title & description when no slides exist */
+  fallbackTitle?: string | Record<string, string>;
+  fallbackDescription?: string | Record<string, string>;
   showButton?: boolean;
   buttonText?: string | Record<string, string>;
   buttonLink?: string;
   buttonBg?: string;
+  buttonBackgroundType?: 'solid' | 'gradient';
   buttonTextColor?: string;
+  buttonShape?: 'rounded_rect' | 'pill' | 'soft' | 'square' | string;
+  showButtonArrow?: boolean;
   useGradientTitle?: boolean;
   showHeroImage?: boolean;
   heroImageUrl?: string;
@@ -224,6 +237,9 @@ export interface IntroSlideConfig {
   price?: number;
   originalPrice?: number;
   discountLabel?: string;
+  /** Content source: 'auto' (mode-based), 'intro_posts' (blog intro posts), 'joker_products' (store joker products) */
+  slideSource?: 'auto' | 'intro_posts' | 'joker_products' | 'posts' | 'products' | 'joker';
+  contentSource?: 'auto' | 'intro_posts' | 'joker_products' | 'posts' | 'products' | 'joker';
 }
 
 export interface WebsiteSection {
@@ -361,6 +377,18 @@ export interface OrganizationPolicy {
     invoiceSlices?: Array<{
       minAmount: number;
       discountAmount: number;
+    }>;
+  };
+  appLinks?: {
+    links?: Array<{
+      title: string;
+      url: string;
+      displayLocation: string;
+      textColor?: string;
+      fontWeight?: string;
+      isUnderlined?: boolean;
+      linkType?: string;
+      body?: string;
     }>;
   };
 }

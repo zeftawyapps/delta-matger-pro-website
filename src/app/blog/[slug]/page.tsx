@@ -18,7 +18,7 @@ interface Comment {
 export default function BlogPostContent() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug;
-  const { lang, t, posts, categories } = useApp();
+  const { lang, t, posts, categories, products, addToCart } = useApp();
 
   const showComments = false; // Hidden per user request
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -167,6 +167,91 @@ export default function BlogPostContent() {
                 </p>
               ))
             )}
+
+            {/* Linked Product Conversion CTA Card */}
+            {(() => {
+              const linkedProductId = post.linkedProductId || (post.relatedProducts && post.relatedProducts.length > 0 ? post.relatedProducts[0] : null);
+              const linkedProduct = linkedProductId
+                ? products.find((p) => p.id === linkedProductId)
+                : null;
+
+              const ctaTargetUrl = post.ctaButtonLink?.trim() || (linkedProductId ? `/store/${linkedProductId}` : null);
+
+              // If neither a linked product nor an explicit button link exists, don't show the card
+              if (!linkedProduct && !ctaTargetUrl && !linkedProductId) return null;
+
+              const rawCtaText = post.ctaButtonText;
+              const ctaBtnText = typeof rawCtaText === "string"
+                ? rawCtaText
+                : (rawCtaText?.[lang as any] || rawCtaText?.ar || (lang === "ar" ? "اشتري المنتج الآن" : "Shop Product Now"));
+
+              const prodName = linkedProduct
+                ? (typeof linkedProduct.name === "string"
+                    ? linkedProduct.name
+                    : (linkedProduct.name?.[lang as any] || linkedProduct.name?.ar || ""))
+                : (lang === "ar" ? "المنتج الموصى به" : "Recommended Product");
+
+              const prodDesc = linkedProduct?.description
+                ? stripHtml(typeof linkedProduct.description === "string" ? linkedProduct.description : (linkedProduct.description?.[lang as any] || linkedProduct.description?.ar || ""))
+                : "";
+
+              const prodImg = (linkedProduct?.images && linkedProduct.images[0]) || (linkedProduct as any)?.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600";
+
+              const finalHref = ctaTargetUrl || (linkedProduct ? `/store/${linkedProduct.id}` : "/store");
+              const isExternal = finalHref.startsWith("http://") || finalHref.startsWith("https://") || finalHref.startsWith("/#/");
+
+              return (
+                <div className={styles.productCtaCard}>
+                  <div className={styles.productCtaBadge}>
+                    ✨ {lang === "ar" ? "المنتج المرتبط بهذا المقال" : "Featured Product in this Post"}
+                  </div>
+                  <div className={styles.productCtaBody}>
+                    <div className={styles.productCtaImgWrapper}>
+                      <img
+                        src={prodImg}
+                        alt={prodName}
+                        className={styles.productCtaImg}
+                      />
+                    </div>
+                    <div className={styles.productCtaContent}>
+                      <h3 className={styles.productCtaTitle}>{prodName}</h3>
+                      {prodDesc && <p className={styles.productCtaDesc}>{prodDesc}</p>}
+                      {linkedProduct && (
+                        <div className={styles.productCtaPriceRow}>
+                          <span className={styles.productCtaPrice}>
+                            {linkedProduct.price} {lang === "ar" ? "ر.س" : "SAR"}
+                          </span>
+                          {linkedProduct.oldPrice && linkedProduct.oldPrice > linkedProduct.price && (
+                            <span className={styles.productCtaOldPrice}>
+                              {linkedProduct.oldPrice} {lang === "ar" ? "ر.س" : "SAR"}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className={styles.productCtaActions}>
+                    {isExternal ? (
+                      <a href={finalHref} target={finalHref.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className={styles.productCtaBtn}>
+                        🛒 {ctaBtnText}
+                      </a>
+                    ) : (
+                      <Link href={finalHref} className={styles.productCtaBtn}>
+                        🛒 {ctaBtnText}
+                      </Link>
+                    )}
+                    {linkedProduct && (
+                      <button
+                        onClick={() => addToCart(linkedProduct, 1)}
+                        className={styles.productCtaAddToCartBtn}
+                      >
+                        + {lang === "ar" ? "إضافة سريعة للسلة" : "Add to Cart"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Sharing Bar */}
             <div className={styles.shareBar}>

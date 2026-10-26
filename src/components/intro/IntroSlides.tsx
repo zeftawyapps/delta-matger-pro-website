@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { CSSProperties, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { IntroSlideConfig } from "@/types";
 import { formatPrice } from "@/utils/currency";
-import { getClassicHeroChrome } from "@/utils/introClassicDefaults";
+import { getClassicHeroChrome, resolveIntroLocalized } from "@/utils/introClassicDefaults";
 import { withIntroDefaults, getIntroTextStyle, normalizeIntroTextAlign, isGradientColor } from "@/utils/introConfig";
 import styles from "./IntroSlides.module.css";
 
@@ -14,6 +14,11 @@ interface NormalizedSlide {
   title: string;
   description: string;
   image?: string;
+  price?: number;
+  originalPrice?: number;
+  discountLabel?: string;
+  link?: string;
+  badge?: string;
 }
 
 interface IntroSlidesProps {
@@ -23,78 +28,174 @@ interface IntroSlidesProps {
   description?: string;
 }
 
+function isLightColorOrGradient(colorStr?: string): boolean {
+  if (!colorStr) return false;
+  const hexMatches = colorStr.match(/#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}/g);
+  if (hexMatches && hexMatches.length > 0) {
+    let totalLuminance = 0;
+    for (const h of hexMatches) {
+      const hex = h.replace("#", "");
+      const r = parseInt(hex.length === 3 ? hex[0] + hex[0] : hex.slice(0, 2), 16);
+      const g = parseInt(hex.length === 3 ? hex[1] + hex[1] : hex.slice(2, 4), 16);
+      const b = parseInt(hex.length === 3 ? hex[2] + hex[2] : hex.slice(4, 6), 16);
+      totalLuminance += 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+    return totalLuminance / hexMatches.length > 170;
+  }
+  return false;
+}
+
 export default function IntroSlides({ config, displayMode, title, description }: IntroSlidesProps) {
-  const { posts, lang, appMode, organizationPolicy } = useApp();
+  const { posts, products, lang, appMode, organizationPolicy } = useApp();
   const merged = withIntroDefaults(config);
   const [current, setCurrent] = useState(0);
 
   const isGridMode = displayMode === "grid";
 
-  // Build slides from "intro" posts; fall back to a single default slide.
+  // Build slides based on content source:
+  // - "intro_posts" / "blog": binds to intro posts from blog (postType === "intro")
+  // - "joker_products" / "products" / "joker": binds to Joker products from store (isJoker === true)
+  // - "auto" (default):
+  //    * blog mode -> intro_posts
+  //    * store mode -> joker_products (or fallback)
+  //    * hybrid mode -> user choice in config, or joker_products if exist, else intro_posts
   const slides: NormalizedSlide[] = useMemo(() => {
+    // 1. Map Intro Posts from blog
     const introPosts = posts.filter((p) => p.postType === "intro" && p.isActive !== false);
-
-    const mapped = introPosts.map((p) => {
+    const mappedIntroPosts: NormalizedSlide[] = introPosts.map((p) => {
       const title =
         p.introTitle?.[lang] ||
         p.introTitle?.ar ||
         (typeof p.title === "string" ? p.title : p.title?.[lang] || p.title?.ar) ||
         "";
-      // Show full content from backend – no truncation
-      const description =
+      const rawDesc =
         p.introDescription?.[lang] ||
         p.introDescription?.ar ||
         (typeof p.content === "string" ? p.content : p.content?.[lang as any] || p.content?.ar || "") ||
         p.seoDescription?.[lang] ||
         p.seoDescription?.ar ||
         "";
+      const description = rawDesc.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
       return {
-        id: p.id,
+        id: `post-${p.id}`,
         title,
         description,
         image: p.introImageUrl || p.imageUrl,
+        link: p.slug ? `/blog/${p.slug}` : undefined,
       };
     });
 
-    if (mapped.length > 0) return mapped;
+    // 2. Map Joker Products from store
+    const jokerProducts = (products || []).filter(
+      (p) => (p.isJoker === true || p.isSuperJoker === true) && p.isActive !== false
+    );
+    const mappedJokerProducts: NormalizedSlide[] = jokerProducts.map((p) => {
+      const title =
+        typeof p.name === "string"
+          ? p.name
+          : p.name?.[lang] || p.name?.ar || p.name?.en || "";
+      const rawDesc =
+        typeof p.description === "string"
+          ? p.description
+          : p.description?.[lang] ||
+            p.description?.ar ||
+            (typeof p.additionalData?.description === "string"
+              ? p.additionalData.description
+              : p.additionalData?.description?.[lang as any] || "") ||
+            "";
+      const description = rawDesc.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      const image = p.imageUrl || p.imageUrls?.[0] || p.images?.[0];
+      const originalPrice = p.oldPrice && p.oldPrice > p.price ? p.oldPrice : undefined;
+      const discountLabel = p.discount
+        ? `${p.discount}% OFF`
+        : originalPrice
+          ? `${Math.round(((originalPrice - p.price) / originalPrice) * 100)}% OFF`
+          : undefined;
 
-    // Default slide when no intro content is configured.
+      return {
+        id: `product-${p.id}`,
+        title,
+        description,
+        image,
+        price: p.price,
+        originalPrice,
+        discountLabel,
+        link: `/store/${p.id}`,
+        badge: lang === "ar" ? "منتج مميز" : "Featured",
+      };
+    });
+
+    // 3. Resolve target source
+    const rawSource = (merged.slideSource || merged.contentSource || "auto").toLowerCase().trim();
+    let resolvedSlides: NormalizedSlide[] = [];
+
+    if (rawSource === "custom" || rawSource === "default" || rawSource === "fallback") {
+      resolvedSlides = [];
+    } else if (rawSource === "joker_products" || rawSource === "products" || rawSource === "joker") {
+      resolvedSlides = mappedJokerProducts;
+    } else if (rawSource === "intro_posts" || rawSource === "posts" || rawSource === "blog") {
+      resolvedSlides = mappedIntroPosts;
+    } else {
+      // "auto" resolution by mode:
+      if (appMode === "store") {
+        resolvedSlides = mappedJokerProducts.length > 0 ? mappedJokerProducts : mappedIntroPosts;
+      } else if (appMode === "blog") {
+        resolvedSlides = mappedIntroPosts;
+      } else {
+        // hybrid mode:
+        // By default, if joker products exist, bind to joker products; if not, bind to intro posts
+        resolvedSlides = mappedJokerProducts.length > 0 ? mappedJokerProducts : mappedIntroPosts;
+      }
+    }
+
+    if (resolvedSlides.length > 0) return resolvedSlides;
+
+    const customTitle = resolveIntroLocalized(merged.fallbackTitle, lang);
+    const customDesc = resolveIntroLocalized(merged.fallbackDescription, lang);
+
+    // Default slide when no intro content is configured (respects admin custom decorative text).
     const defaults: Record<string, NormalizedSlide> = {
       blog: {
         id: "intro-default",
         title:
-          lang === "ar"
+          customTitle ||
+          (lang === "ar"
             ? "اكتشف الأفكار التي تلهمك وتنمي مهاراتك"
-            : "Discover Ideas That Inspire Your Journey",
+            : "Discover Ideas That Inspire Your Journey"),
         description:
-          lang === "ar"
+          customDesc ||
+          (lang === "ar"
             ? "مقالات متخصصة يكتبها خبراء لمساعدتك على التفوق."
-            : "Insights and tutorials crafted by experts to help you excel.",
+            : "Insights and tutorials crafted by experts to help you excel."),
       },
       store: {
         id: "intro-default",
         title:
-          lang === "ar" ? "ارتقِ بتجربتك الرقمية اليوم" : "Elevate Your Digital Experience",
+          customTitle ||
+          (lang === "ar" ? "ارتقِ بتجربتك الرقمية اليوم" : "Elevate Your Digital Experience"),
         description:
-          lang === "ar"
+          customDesc ||
+          (lang === "ar"
             ? "اكتشف تشكيلتنا الحصرية بأحدث التقنيات وأفضل الأسعار."
-            : "Discover our exclusive lineup with the latest tech and best prices.",
+            : "Discover our exclusive lineup with the latest tech and best prices."),
         image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900",
       },
       hybrid: {
         id: "intro-default",
         title:
-          lang === "ar"
+          customTitle ||
+          (lang === "ar"
             ? "تسوق بذكاء واقرأ بشغف في مكان واحد"
-            : "Shop Smart & Read Passionately In One Place",
+            : "Shop Smart & Read Passionately In One Place"),
         description:
-          lang === "ar"
+          customDesc ||
+          (lang === "ar"
             ? "أفضل المنتجات مع مقالات شيقة وأدلة تعليمية."
-            : "The finest products with captivating stories and guides.",
+            : "The finest products with captivating stories and guides."),
       },
     };
     return [defaults[appMode] ?? defaults.blog];
-  }, [posts, lang, appMode]);
+  }, [posts, products, lang, appMode, merged.slideSource, merged.contentSource, merged.fallbackTitle, merged.fallbackDescription]);
 
   const slideCount = slides.length;
 
@@ -114,25 +215,29 @@ export default function IntroSlides({ config, displayMode, title, description }:
 
   const isCustomBgGradient = isGradientColor(merged.customBg);
   let background: string;
-  if (merged.backgroundType === "solid") {
-    if (merged.customBg && !isCustomBgGradient) {
-      background = merged.customBg;
-    } else if (merged.customBg && isCustomBgGradient) {
-      const firstColor = merged.customBg.match(/#(?:[0-9a-fA-F]{3}){1,2}|rgba?\([^)]+\)/)?.[0];
-      background = firstColor || "var(--surface)";
-    } else {
-      background = "var(--surface)";
-    }
+  if (isCustomBgGradient) {
+    background = merged.customBg!;
+  } else if (merged.backgroundType === "gradient") {
+    background =
+      merged.customBg ||
+      "linear-gradient(135deg, #100C1C, #1A2332)";
   } else {
     background =
       merged.customBg ||
-      "linear-gradient(135deg, var(--primary), var(--secondary))";
+      (appMode === "hybrid"
+        ? "linear-gradient(135deg, #100C1C, #1A2332)"
+        : "var(--surface)");
   }
 
-  // apple_fullscreen renders text OVER a full-bleed image → default white.
-  // full_split renders text in a SEPARATE column beside the image → use theme text color.
-  const isFullBleedOverlay = merged.displayStyle === "apple_fullscreen";
-  const textFallback = isFullBleedOverlay ? "#FFFFFF" : "var(--fg)";
+  const isLightBg = isLightColorOrGradient(background);
+  const isFullBleedWithImage =
+    merged.displayStyle === "apple_fullscreen" &&
+    Boolean(slides[current]?.image || merged.heroImageUrl);
+  const textFallback = isFullBleedWithImage
+    ? "#FFFFFF"
+    : isLightBg
+      ? "var(--fg)"
+      : "#FFFFFF";
   const textStyle = getIntroTextStyle(merged.textColor, textFallback);
 
   const goTo = (i: number) => setCurrent(((i % slideCount) + slideCount) % slideCount);
@@ -226,16 +331,114 @@ export default function IntroSlides({ config, displayMode, title, description }:
   };
 
 
+  // User custom text color or gradient
+  const hasCustomTextColor = Boolean(merged.textColor && merged.textColor.trim());
+  const isCustomTextGradient = isGradientColor(merged.textColor);
+
+  // If user provided custom textColor (solid or gradient), ALWAYS honor it!
+  // Fall back to theme gradient (.classicTitleGradient) ONLY when textColor is unset and useGradientTitle is true.
+  const useThemeDefaultGradient = !hasCustomTextColor && (merged.useGradientTitle !== false);
+
+  const titleClass = `${styles.classicTitle} ${
+    useThemeDefaultGradient
+      ? `${isLightBg && !isFullBleedWithImage ? styles.classicTitleGradientLight : styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
+      : ""
+  }`.trim();
+
+  const titleStyle: CSSProperties | undefined = useThemeDefaultGradient
+    ? undefined
+    : textStyle;
+
+  const descStyle: CSSProperties = isCustomTextGradient
+    ? { color: textFallback, opacity: 0.92 }
+    : textStyle;
+
+  function getHeroButtonStyle(c: {
+    buttonBg?: string;
+    buttonBackgroundType?: string;
+    buttonTextColor?: string;
+    buttonShape?: string;
+  }): CSSProperties {
+    let rawBg = c.buttonBg?.trim();
+    let textColor = c.buttonTextColor?.trim();
+
+    // AUTO-TRANSFER: If buttonTextColor has a gradient, transfer it to rawBg!
+    if (isGradientColor(textColor)) {
+      if (!isGradientColor(rawBg)) {
+        rawBg = textColor;
+      }
+      textColor = "#FFFFFF";
+    }
+
+    if (rawBg && (c.buttonBackgroundType === "gradient" || rawBg.includes(",")) && !isGradientColor(rawBg)) {
+      rawBg = rawBg.includes(",")
+        ? `linear-gradient(135deg, ${rawBg})`
+        : `linear-gradient(135deg, ${rawBg}, var(--secondary))`;
+    }
+
+    const isBgGradient = isGradientColor(rawBg);
+    const s: CSSProperties = {};
+
+    if (rawBg) {
+      s.background = rawBg;
+      if (isBgGradient) {
+        s.backgroundImage = rawBg;
+        s.border = "none";
+      } else {
+        s.backgroundColor = rawBg;
+        s.backgroundImage = "none";
+        s.borderColor = rawBg;
+      }
+    }
+
+    // Button Shape (configurable via webconfig)
+    if (c.buttonShape === "pill") {
+      s.borderRadius = "9999px";
+    } else if (c.buttonShape === "square") {
+      s.borderRadius = "0px";
+    } else if (c.buttonShape === "soft") {
+      s.borderRadius = "16px";
+    } else if (c.buttonShape === "rounded_rect") {
+      s.borderRadius = "var(--radius-sm, 8px)";
+    }
+
+    // Button text color must ALWAYS be a clean readable solid color (never clipped to text on button container!)
+    const finalTextColor = textColor || "#FFFFFF";
+    s.color = finalTextColor;
+    s.WebkitTextFillColor = finalTextColor;
+
+    return s;
+  }
+
+  function getHeroBadgeStyle(c: { badgeBg?: string; badgeTextColor?: string }): CSSProperties {
+    const s: CSSProperties = {
+      marginBottom: "0.75rem",
+      display: "inline-block",
+    };
+
+    if (c.badgeBg) {
+      const isBgGradient = isGradientColor(c.badgeBg);
+      s.background = c.badgeBg;
+      s.backgroundColor = c.badgeBg;
+      s.backgroundImage = isBgGradient ? c.badgeBg : "none";
+      s.borderColor = c.badgeBg;
+    }
+
+    if (c.badgeTextColor) {
+      s.color = c.badgeTextColor;
+      s.WebkitTextFillColor = c.badgeTextColor;
+    }
+
+    return s;
+  }
+
   // ---- Display style variants ----
   let inner: React.ReactNode;
 
   switch (merged.displayStyle) {
     case "minimal_glass": {
-      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
       const bgImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
-      const titleClass = chrome.useGradientTitle
-        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
-        : "";
 
       inner = (
         <div className={`${styles.glassWrapper} ${alignClass}`}>
@@ -248,14 +451,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
           {bgImg && (
             <img src={bgImg} alt="" className={styles.blurBg} aria-hidden />
           )}
-          <div className={`${styles.glassCard} glassCard ${alignClass}`} style={textStyle}>
+          <div className={`${styles.glassCard} glassCard ${alignClass}`}>
             {chrome.showBadge && chrome.badge && (
-              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
                 {chrome.badge}
               </span>
             )}
-            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
-            <p style={textStyle}>{slide.description}</p>
+            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
+            <p style={descStyle}>{slide.description}</p>
             {chrome.showPrice && chrome.price != null && (
               <div className={styles.classicPriceRow}>
                 {chrome.originalPrice != null && (
@@ -276,13 +479,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 <Link
                   href={chrome.buttonLink}
                   className="glowButton"
-                  style={{
-                    backgroundColor: chrome.buttonBg || undefined,
-                    color: chrome.buttonTextColor || undefined,
-                    borderColor: chrome.buttonBg || undefined,
-                  }}
+                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
                 >
-                  {chrome.buttonText}
+                  <span>{chrome.buttonText}</span>
+                  {chrome.showButtonArrow && (
+                    <span className={styles.heroBtnArrow} aria-hidden>
+                      {lang === "ar" ? "←" : "→"}
+                    </span>
+                  )}
                 </Link>
               </div>
             )}
@@ -293,11 +497,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
     }
 
     case "full_split": {
-      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
       const visualImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
-      const titleClass = chrome.useGradientTitle
-        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
-        : "";
 
       inner = (
         <div className={styles.splitWrapper}>
@@ -307,14 +508,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
               aria-hidden
             />
           )}
-          <div className={`${styles.splitText} ${alignClass}`} style={textStyle}>
+          <div className={`${styles.splitText} ${alignClass}`}>
             {chrome.showBadge && chrome.badge && (
-              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
                 {chrome.badge}
               </span>
             )}
-            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
-            <p style={textStyle}>{slide.description}</p>
+            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
+            <p style={descStyle}>{slide.description}</p>
             {chrome.showPrice && chrome.price != null && (
               <div className={styles.classicPriceRow}>
                 {chrome.originalPrice != null && (
@@ -335,13 +536,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 <Link
                   href={chrome.buttonLink}
                   className="glowButton"
-                  style={{
-                    backgroundColor: chrome.buttonBg || undefined,
-                    color: chrome.buttonTextColor || undefined,
-                    borderColor: chrome.buttonBg || undefined,
-                  }}
+                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
                 >
-                  {chrome.buttonText}
+                  <span>{chrome.buttonText}</span>
+                  {chrome.showButtonArrow && (
+                    <span className={styles.heroBtnArrow} aria-hidden>
+                      {lang === "ar" ? "←" : "→"}
+                    </span>
+                  )}
                 </Link>
               </div>
             )}
@@ -359,11 +561,7 @@ export default function IntroSlides({ config, displayMode, title, description }:
     }
 
     case "classic_centered": {
-      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
-      const bodyTextStyle = getIntroTextStyle(merged.textColor, textFallback);
-      const titleClass = chrome.useGradientTitle
-        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
-        : styles.classicTitle;
+      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
 
       inner = (
         <div className={styles.classicWrapper}>
@@ -380,14 +578,15 @@ export default function IntroSlides({ config, displayMode, title, description }:
               {chrome.showBadge && chrome.badge && (
                 <span
                   className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`}
+                  style={getHeroBadgeStyle(chrome)}
                 >
                   {appMode === "store" ? `⚡ ${chrome.badge}` : chrome.badge}
                 </span>
               )}
-              <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : bodyTextStyle}>
+              <h1 className={titleClass} style={titleStyle}>
                 {slide.title}
               </h1>
-              <p className={styles.classicDescription} style={bodyTextStyle}>
+              <p className={styles.classicDescription} style={descStyle}>
                 {slide.description}
               </p>
               {chrome.showPrice && chrome.price != null && (
@@ -410,13 +609,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
                   <Link
                     href={chrome.buttonLink}
                     className="glowButton"
-                    style={{
-                      backgroundColor: chrome.buttonBg || undefined,
-                      color: chrome.buttonTextColor || undefined,
-                      borderColor: chrome.buttonBg || undefined,
-                    }}
+                    style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
                   >
-                    {chrome.buttonText}
+                    <span>{chrome.buttonText}</span>
+                    {chrome.showButtonArrow && (
+                      <span className={styles.heroBtnArrow} aria-hidden>
+                        {lang === "ar" ? "←" : "→"}
+                      </span>
+                    )}
                   </Link>
                 </div>
               )}
@@ -436,11 +636,9 @@ export default function IntroSlides({ config, displayMode, title, description }:
 
     case "apple_fullscreen":
     default: {
-      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image);
+      const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
       const bgImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
-      const titleClass = chrome.useGradientTitle
-        ? `${styles.classicTitle} ${styles.classicTitleGradient} ${appMode === "store" ? styles.classicTitleStore : ""}`
-        : "";
+      const hasBgImage = Boolean(bgImg);
 
       inner = (
         <div className={`${styles.appleWrapper} ${alignClass}`}>
@@ -451,17 +649,19 @@ export default function IntroSlides({ config, displayMode, title, description }:
             />
           )}
           {bgImg && (
-            <img src={bgImg} alt={slide.title} className={styles.appleBg} />
+            <>
+              <img src={bgImg} alt={slide.title} className={styles.appleBg} />
+              <div className={styles.appleOverlay} />
+            </>
           )}
-          <div className={styles.appleOverlay} />
-          <div className={`${styles.appleContent} ${alignClass}`} style={textStyle}>
+          <div className={`${styles.appleContent} ${alignClass}`}>
             {chrome.showBadge && chrome.badge && (
-              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={{ marginBottom: "0.75rem", display: "inline-block" }}>
+              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
                 {chrome.badge}
               </span>
             )}
-            <h1 className={titleClass} style={chrome.useGradientTitle ? undefined : textStyle}>{slide.title}</h1>
-            <p style={textStyle}>{slide.description}</p>
+            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
+            <p style={descStyle}>{slide.description}</p>
             {chrome.showPrice && chrome.price != null && (
               <div className={styles.classicPriceRow}>
                 {chrome.originalPrice != null && (
@@ -482,13 +682,14 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 <Link
                   href={chrome.buttonLink}
                   className="glowButton"
-                  style={{
-                    backgroundColor: chrome.buttonBg || undefined,
-                    color: chrome.buttonTextColor || undefined,
-                    borderColor: chrome.buttonBg || undefined,
-                  }}
+                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
                 >
-                  {chrome.buttonText}
+                  <span>{chrome.buttonText}</span>
+                  {chrome.showButtonArrow && (
+                    <span className={styles.heroBtnArrow} aria-hidden>
+                      {lang === "ar" ? "←" : "→"}
+                    </span>
+                  )}
                 </Link>
               </div>
             )}

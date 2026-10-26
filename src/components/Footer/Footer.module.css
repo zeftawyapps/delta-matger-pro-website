@@ -125,9 +125,9 @@
 }
 
 .logoImage {
-  height: 38px;
+  height: clamp(38px, 32px + 1vh, 52px);
   width: auto;
-  max-width: 150px;
+  max-width: 200px;
   object-fit: contain;
   display: block;
 }
@@ -136,6 +136,7 @@
   font-size: 1.3rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

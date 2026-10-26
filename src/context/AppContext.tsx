@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { api } from "../services/api";
 import clientConfig from "../config/clientConfig.json";
 import { applyTheme } from "../utils/theme";
@@ -380,6 +381,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<"ar" | "en">("ar");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [appMode, setAppModeState] = useState<AppMode>("blog");
+  const pathname = usePathname();
+
+  // Track campaign parameters whenever route changes or landing on a new page
+  useEffect(() => {
+    initCampaignTracker(clientConfig.baseUrl);
+  }, [pathname]);
 
   // PERSISTENCE OF LAYOUT PREFERENCES
   const setAppMode = (mode: AppMode) => {

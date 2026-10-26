@@ -14,7 +14,7 @@ interface StaticPageProps {
 
 export default function StaticPage({ params }: StaticPageProps) {
   const { slug } = use(params);
-  const { lang, posts } = useApp();
+  const { lang, posts, organizationPolicy } = useApp();
   const isAr = lang === "ar";
 
   // Find the page in posts where postType is 'page' and slug matches
@@ -28,7 +28,26 @@ export default function StaticPage({ params }: StaticPageProps) {
   const decodedSlug = decodeURIComponent(slug).toLowerCase();
 
   if (!page) {
-    if (["privacy", "privacy-policy", "privacy-policy.html", "سياسة-الخصوصية"].includes(decodedSlug) && policies.privacyHtml) {
+    // Check organizationPolicy.appLinks.links first (dynamic database orgpolicy)
+    const matchedAppLink = organizationPolicy?.appLinks?.links?.find((link) => {
+      if (link.linkType !== "page" || !link.body) return false;
+      const titleLower = link.title.trim().toLowerCase();
+      const slugNormalized = decodedSlug.replace(/[-_]/g, " ");
+      return (
+        titleLower === decodedSlug ||
+        titleLower === slugNormalized ||
+        (decodedSlug.includes("privacy") && (titleLower.includes("خصوصية") || titleLower.includes("privacy"))) ||
+        (decodedSlug.includes("return") && (titleLower.includes("استرجاع") || titleLower.includes("return"))) ||
+        (decodedSlug.includes("terms") && (titleLower.includes("شروط") || titleLower.includes("terms"))) ||
+        link.url === slug ||
+        link.url === `/${slug}`
+      );
+    });
+
+    if (matchedAppLink && matchedAppLink.body) {
+      fallbackHtml = matchedAppLink.body;
+      fallbackTitle = matchedAppLink.title;
+    } else if (["privacy", "privacy-policy", "privacy-policy.html", "سياسة-الخصوصية"].includes(decodedSlug) && policies.privacyHtml) {
       fallbackHtml = policies.privacyHtml;
       fallbackTitle = isAr ? "سياسة الخصوصية" : "Privacy Policy";
     } else if (["return", "return-policy", "refund", "returns", "سياسة-الاسترجاع", "سياسة-الاستبدال-والاسترجاع"].includes(decodedSlug) && policies.returnHtml) {

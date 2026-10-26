@@ -4,17 +4,22 @@ type Localized = string | Record<string, string> | undefined;
 
 export function resolveIntroLocalized(val: Localized, lang: string): string {
   if (!val) return "";
-  if (typeof val === "string") return val;
-  return val[lang] || val.ar || val.en || "";
+  if (typeof val === "string") return val.trim();
+  const res = val[lang] || val.ar || val.en || "";
+  return typeof res === "string" ? res.trim() : "";
 }
 
 export interface ClassicHeroChrome {
   badge: string;
+  badgeBg?: string;
+  badgeTextColor?: string;
   showBadge: boolean;
   buttonText: string;
   buttonLink: string;
   buttonBg?: string;
   buttonTextColor?: string;
+  buttonShape?: string;
+  showButtonArrow?: boolean;
   showButton: boolean;
   showGlow: boolean;
   useGradientTitle: boolean;
@@ -63,7 +68,14 @@ export function getClassicHeroChrome(
   config: IntroSlideConfig,
   appMode: string,
   lang: string,
-  slideImage?: string
+  slideImage?: string,
+  slideMeta?: {
+    price?: number;
+    originalPrice?: number;
+    discountLabel?: string;
+    link?: string;
+    badge?: string;
+  }
 ): ClassicHeroChrome {
   const defaults = modeDefaults(appMode, lang);
   const badgeFromConfig = resolveIntroLocalized(config.badgeText, lang);
@@ -73,21 +85,28 @@ export function getClassicHeroChrome(
     config.showHeroImage !== false &&
     !!(config.heroImageUrl || slideImage || (appMode === "store" ? defaults.imageUrl : undefined));
 
+  const resolvedButtonText =
+    buttonFromConfig || (config.showButton !== false ? (slideMeta?.link ? (lang === "ar" ? "عرض التفاصيل" : "View Details") : defaults.buttonText) : "");
+
   return {
-    badge: badgeFromConfig || (config.showBadge !== false ? defaults.badge : ""),
+    badge: badgeFromConfig || slideMeta?.badge || (config.showBadge !== false ? defaults.badge : ""),
+    badgeBg: (config.badgeBg && config.badgeBg.trim()) || undefined,
+    badgeTextColor: (config.badgeTextColor && config.badgeTextColor.trim()) || undefined,
     showBadge: config.showBadge !== false,
-    buttonText: buttonFromConfig || (config.showButton !== false ? defaults.buttonText : ""),
-    buttonLink: config.buttonLink || defaults.buttonLink || "#",
-    buttonBg: config.buttonBg,
-    buttonTextColor: config.buttonTextColor,
+    buttonText: resolvedButtonText,
+    buttonLink: (config.buttonLink && config.buttonLink.trim()) || slideMeta?.link || defaults.buttonLink || "#",
+    buttonBg: (config.buttonBg && config.buttonBg.trim()) || undefined,
+    buttonTextColor: (config.buttonTextColor && config.buttonTextColor.trim()) || undefined,
+    buttonShape: config.buttonShape,
+    showButtonArrow: config.showButtonArrow === true,
     showButton: config.showButton !== false,
     showGlow: config.showGlow !== false,
     useGradientTitle: config.useGradientTitle !== false,
     showImage,
     imageUrl: config.heroImageUrl || slideImage || defaults.imageUrl,
-    showPrice: config.showPrice === true,
-    price: config.price ?? defaults.price,
-    originalPrice: config.originalPrice ?? defaults.originalPrice,
-    discountLabel: config.discountLabel || defaults.discountLabel,
+    showPrice: (slideMeta?.price != null) ? (config.showPrice !== false) : config.showPrice === true,
+    price: slideMeta?.price ?? config.price ?? defaults.price,
+    originalPrice: slideMeta?.originalPrice ?? config.originalPrice ?? defaults.originalPrice,
+    discountLabel: slideMeta?.discountLabel || config.discountLabel || defaults.discountLabel,
   };
 }

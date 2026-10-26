@@ -9,6 +9,7 @@ import FeedbackModal from "../FeedbackModal/FeedbackModal";
 import { formatPrice } from "@/utils/currency";
 import { api, BASE_URL } from "@/services/api";
 import clientConfig from "@/config/clientConfig.json";
+import { clearCampaignAttribution } from "@/utils/campaignTracker";
 import styles from "./Navbar.module.css";
 
 function parseColorHex(valueStr: string): string {
@@ -375,6 +376,7 @@ export default function Navbar() {
       });
 
       clearCart();
+      clearCampaignAttribution();
       setOrderSuccessData({
         orderId: (createdOrder as any)?.id || (createdOrder as any)?._id || `ORD-${Date.now().toString().slice(-6)}`,
         total: orderTotal,
@@ -550,6 +552,11 @@ export default function Navbar() {
   const visiblePages = navPages.slice(0, EXCESS_THRESHOLD);
   const excessPages = navPages.slice(EXCESS_THRESHOLD);
 
+  const headerPolicyLinks = (organizationPolicy?.appLinks?.links || []).filter((l) => {
+    const loc = (l.displayLocation || "both").toLowerCase();
+    return loc === "header" || loc === "both";
+  });
+
   const headerInlineStyle: React.CSSProperties = {
     ...(customNavbarBg ? { backgroundColor: customNavbarBg, backgroundImage: "none" } : {}),
     ...(customNavbarTextColor ? { color: customNavbarTextColor, "--fg": customNavbarTextColor } as any : {}),
@@ -655,6 +662,39 @@ export default function Navbar() {
           >
             {title}
           </Link>
+        );
+      })}
+
+      {headerPolicyLinks.map((link, idx) => {
+        const linkStyle: React.CSSProperties = {
+          ...linkCustomStyle,
+          color: link.textColor || customNavbarTextColor || undefined,
+          fontWeight: link.fontWeight === "bold" ? "bold" : "normal",
+          textDecoration: link.isUnderlined ? "underline" : undefined,
+        };
+        if (link.linkType === "page" || (!link.url && link.body)) {
+          return (
+            <Link
+              key={`header-pol-${idx}`}
+              href={`/${encodeURIComponent(link.title)}`}
+              className={`${styles.navLink} ${pathname === `/${encodeURIComponent(link.title)}` ? styles.active : ""}`}
+              style={linkStyle}
+            >
+              {link.title}
+            </Link>
+          );
+        }
+        return (
+          <a
+            key={`header-pol-${idx}`}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.navLink}
+            style={linkStyle}
+          >
+            {link.title}
+          </a>
         );
       })}
 
@@ -1120,6 +1160,41 @@ export default function Navbar() {
                   >
                     {title}
                   </Link>
+                );
+              })}
+              {/* Policy Links from organizationPolicy */}
+              {headerPolicyLinks.map((link, idx) => {
+                const linkStyle: React.CSSProperties = {
+                  ...linkCustomStyle,
+                  color: link.textColor || customNavbarTextColor || undefined,
+                  fontWeight: link.fontWeight === "bold" ? "bold" : "normal",
+                  textDecoration: link.isUnderlined ? "underline" : undefined,
+                };
+                if (link.linkType === "page" || (!link.url && link.body)) {
+                  return (
+                    <Link
+                      key={`sidebar-pol-${idx}`}
+                      href={`/${encodeURIComponent(link.title)}`}
+                      className={styles.sidebarLink}
+                      style={linkStyle}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      {link.title}
+                    </Link>
+                  );
+                }
+                return (
+                  <a
+                    key={`sidebar-pol-${idx}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.sidebarLink}
+                    style={linkStyle}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    {link.title}
+                  </a>
                 );
               })}
               {/* Blog Categories (Show in sidebar if appMode is blog or hybrid) */}

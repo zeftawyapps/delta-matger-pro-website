@@ -214,14 +214,17 @@ function HomepageContent() {
       const hasIntroPosts = posts.some(
         (p) => p.postType === "intro" && p.isActive !== false
       );
+      const hasJokerProducts = (products || []).some(
+        (p) => (p.isJoker === true || p.isSuperJoker === true) && p.isActive !== false
+      );
       const hasIntroConfig = Object.keys(introConfig).length > 0;
 
-      // Use config-driven intro slides when configured or intro content exists;
+      // Use config-driven intro slides when configured or dynamic content exists;
       // otherwise fall back to the legacy curated heroes.
-      if (hasIntroPosts || hasIntroConfig) {
+      if (hasIntroPosts || hasJokerProducts || hasIntroConfig) {
         return wrapInLayout(
           <IntroSlides
-            key={section.id}
+            key={`${section.id}_${appMode}`}
             config={introConfig}
             displayMode={normalizeIntroDisplayMode(section.displayMode)}
             title={section.title}

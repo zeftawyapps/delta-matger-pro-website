@@ -85,3 +85,7 @@
 | 2026-09-24 19:34:41 | **LOCAL** | `default` | 1.2.4 | 4 | `local-orgs` | ⚙️ تهيئة ملفات (Configure Only) | ✅ ناجح |
 | 2026-10-06 19:00:23 | **LOCAL** | `default` | 1.2.4 | 4 | `local-orgs` | ⚙️ تهيئة ملفات (Configure Only) | ✅ ناجح |
 | 2026-10-06 21:18:48 | **LOCAL** | `default` | 1.2.4 | 4 | `local-orgs` | ⚙️ تهيئة ملفات (Configure Only) | ✅ ناجح |
+| 2026-10-21 17:07:14 | **UAT** | `default` | 1.4.4 | 8 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-10-21 17:07:28 | **UAT** | `default` | 1.4.4 | 8 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-10-21 19:03:58 | **UAT** | `default` | 1.4.4 | 8 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-10-24 14:41:21 | **UAT** | `default` | 1.4.4 | 8 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |

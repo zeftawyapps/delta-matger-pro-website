@@ -950,6 +950,12 @@ export const api = {
     if (campaignAttribution?.platform) {
       params.set('platform', campaignAttribution.platform);
     }
+    if (campaignAttribution?.utmCampaign) {
+      params.set('utm_campaign', campaignAttribution.utmCampaign);
+    }
+    if (campaignAttribution?.utmSource) {
+      params.set('utm_source', campaignAttribution.utmSource);
+    }
 
     const path = `/orders/${args.organizationId}?${params.toString()}`;
     const payload = await requestJson(path, {
