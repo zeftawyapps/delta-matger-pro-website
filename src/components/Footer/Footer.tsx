@@ -8,13 +8,8 @@ import FeedbackModal from "../FeedbackModal/FeedbackModal";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
-  const { lang, t, appMode, categories, productCategories, config, footerPages, appTitle, organizationPolicy } = useApp();
+  const { lang, t, appMode, categories, productCategories, config, footerPages, appTitle } = useApp();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-
-  const footerPolicyLinks = (organizationPolicy?.appLinks?.links || []).filter((l) => {
-    const loc = (l.displayLocation || "both").toLowerCase();
-    return loc === "footer" || loc === "both";
-  });
 
   const appVersion = config?.appVersion || clientConfig?.appVersion || "1.0.0";
   const appBuildIndex = config?.appBuildIndex || clientConfig?.appBuildIndex || 1;
@@ -140,30 +135,6 @@ export default function Footer() {
               return (
                 <li key={page.id}>
                   <Link href={`/${page.slug}`}>{title}</Link>
-                </li>
-              );
-            })}
-
-            {footerPolicyLinks.map((link, idx) => {
-              const customStyle: React.CSSProperties = {
-                color: link.textColor || undefined,
-                fontWeight: link.fontWeight === "bold" ? "bold" : "normal",
-                textDecoration: link.isUnderlined ? "underline" : undefined,
-              };
-              if (link.linkType === "page" || (!link.url && link.body)) {
-                return (
-                  <li key={`pol-${idx}`}>
-                    <Link href={`/${encodeURIComponent(link.title)}`} style={customStyle}>
-                      {link.title}
-                    </Link>
-                  </li>
-                );
-              }
-              return (
-                <li key={`pol-${idx}`}>
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" style={customStyle}>
-                    {link.title}
-                  </a>
                 </li>
               );
             })}

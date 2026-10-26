@@ -967,7 +967,8 @@ export const api = {
         totalOrderPrice: args.totalOrderPrice,
         items: args.items,
         additionalCalculation: args.additionalCalculation,
-        campaignAttribution: campaignAttribution || undefined,
+        channel: 'website',
+        campaignAttribution: campaignAttribution ? { ...campaignAttribution, channel: 'website' } : undefined,
       }),
     });
     return getResponseData(payload);
