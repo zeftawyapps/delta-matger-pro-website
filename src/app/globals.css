@@ -632,3 +632,185 @@ html[dir="rtl"] .customSelect {
   align-items: center;
   gap: 0.5rem;
 }
+
+/* ============================================================================
+   Theme Presets Engine & Section Color Rhythm Utilities
+   ============================================================================ */
+
+/* 1. Dark Tech / SaaS Preset */
+:root[data-theme-preset="dark_tech"] {
+  --bg: #0b0e14;
+  --fg: #f8fafc;
+  --primary: #10b981;
+  --secondary: #6366f1;
+  --accent: #34d399;
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+/* 2. Clean Minimalist Preset */
+:root[data-theme-preset="clean_minimal"] {
+  --radius-md: 12px;
+  --radius-lg: 18px;
+}
+
+/* 3. Luxury & Bold Gold Preset */
+:root[data-theme-preset="luxury_gold"] {
+  --primary: #D4AF37;
+  --secondary: #AA771C;
+  --accent: #F3E5AB;
+}
+
+/* 4. Vibrant E-Commerce Preset */
+:root[data-theme-preset="vibrant_ecom"] {
+  --primary: #2563eb;
+  --secondary: #f97316;
+  --accent: #10b981;
+}
+
+/* Section Rhythm Wrapper & Ambient Orbs (Full-Viewport Bleed 100vw) */
+.sectionRhythmWrapper {
+  position: relative;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 3.5rem 1.5rem;
+  overflow: hidden;
+  border-radius: 0;
+  transition: background 0.4s ease;
+}
+
+.sectionRhythmInner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.sectionRhythmWrapper > .sectionDividerGlowLine:first-child,
+.sectionRhythmWrapper > .sectionDividerGradientFade:first-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.sectionRhythmWrapper > .sectionDividerGlowLine:last-child,
+.sectionRhythmWrapper > .sectionDividerGradientFade:last-child {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.sec-bg-pattern {
+  background-image: 
+    linear-gradient(to right, color-mix(in srgb, var(--border) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border) 35%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.sec-bg-contrast_break {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  color: #ffffff;
+  padding: 2.5rem 1.5rem;
+}
+
+.sectionGlowOrb {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.28;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatGlowOrb 10s ease-in-out infinite alternate;
+}
+
+.orbPos-top {
+  top: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orbPos-center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.orbPos-bottom {
+  bottom: -180px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orbPos-corners {
+  top: -120px;
+  inset-inline-end: -120px;
+}
+
+@keyframes floatGlowOrb {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    transform: translate(-45%, -55%) scale(1.12);
+  }
+}
+
+/* Section Glow Dividers */
+.sectionDividerGlowLine {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--section-glow-color, var(--primary)),
+    var(--secondary),
+    transparent
+  );
+  opacity: 0.85;
+  box-shadow: 0 0 14px var(--section-glow-color, var(--primary));
+}
+
+.sectionDividerGradientFade {
+  width: 100%;
+  height: 36px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--section-glow-color, var(--primary)) 12%, transparent),
+    transparent
+  );
+  pointer-events: none;
+}
+
+/* Ultra Glass & Glow Borders */
+.attractiveCard {
+  background: var(--surface);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px -15px var(--shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.attractiveCard:hover {
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  box-shadow: 
+    0 25px 50px -12px color-mix(in srgb, var(--primary) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-4px);
+}
+

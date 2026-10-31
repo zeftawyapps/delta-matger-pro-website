@@ -3,40 +3,58 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { mockTestimonials } from "@/data/mockData";
+import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
 import styles from "./StoreComponents.module.css";
 
-export default function Testimonials() {
-  const { lang, t } = useApp();
+interface TestimonialsProps {
+  items?: any[];
+  title?: string | Record<string, string>;
+  description?: string | Record<string, string>;
+}
+
+export default function Testimonials({ items, title, description }: TestimonialsProps) {
+  const { lang } = useApp();
   const [activeIndex, setActiveIndex] = useState(0);
+  const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
+
+  const list = items && items.length > 0 ? items : mockTestimonials;
+  if (list.length === 0) return null;
 
   const nextSlide = () => {
-    setActiveIndex((prev) => (prev + 1) % mockTestimonials.length);
+    setActiveIndex((prev) => (prev + 1) % list.length);
   };
 
   const prevSlide = () => {
-    setActiveIndex((prev) => (prev - 1 + mockTestimonials.length) % mockTestimonials.length);
+    setActiveIndex((prev) => (prev - 1 + list.length) % list.length);
   };
+
+  const currentItem = list[activeIndex] || list[0];
+  const userName = resolveLocalizedText(currentItem.name, lang);
+  const userRole = resolveLocalizedText(currentItem.role, lang);
+  const feedbackText = resolveLocalizedText(currentItem.feedback || currentItem.comment || currentItem.text, lang);
+  const avatarUrl = currentItem.avatar || currentItem.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
 
   return (
     <section className={`${styles.testimonialsSection} animateFadeUp`}>
-      <h2 className={styles.sectionTitle}>{t.testimonialsTitle}</h2>
-      <div className={`${styles.testimonialsBox} glassCard`}>
+      {hasHeader && (
+        <div className={styles.landingSectionHeader}>
+          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+        </div>
+      )}
+      <div className={`${styles.testimonialsBox} glassCard attractiveCard`}>
         <button onClick={prevSlide} className={styles.sliderArrow} aria-label="Previous Testimonial">
           {lang === "ar" ? "→" : "←"}
         </button>
 
         <div className={styles.testimonialContent}>
           <div className={styles.avatarWrapper}>
-            <img
-              src={mockTestimonials[activeIndex].avatar}
-              alt={mockTestimonials[activeIndex].name[lang as keyof typeof mockTestimonials[0]["name"]]}
-              className={styles.userAvatar}
-            />
+            <img src={avatarUrl} alt={userName} className={styles.userAvatar} />
           </div>
           <div className={styles.ratingStars}>★★★★★</div>
-          <p className={styles.feedbackText}>&quot;{mockTestimonials[activeIndex].feedback[lang as keyof typeof mockTestimonials[0]["feedback"]]}&quot;</p>
-          <strong className={styles.userName}>{mockTestimonials[activeIndex].name[lang as keyof typeof mockTestimonials[0]["name"]]}</strong>
-          <span className={styles.userRole}>{mockTestimonials[activeIndex].role[lang as keyof typeof mockTestimonials[0]["role"]]}</span>
+          <p className={styles.feedbackText}>&quot;{feedbackText}&quot;</p>
+          <strong className={styles.userName}>{userName}</strong>
+          {userRole && <span className={styles.userRole}>{userRole}</span>}
         </div>
 
         <button onClick={nextSlide} className={styles.sliderArrow} aria-label="Next Testimonial">
@@ -45,7 +63,7 @@ export default function Testimonials() {
       </div>
 
       <div className={styles.dotsRow}>
-        {mockTestimonials.map((_, idx) => (
+        {list.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setActiveIndex(idx)}

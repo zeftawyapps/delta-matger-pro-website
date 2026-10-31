@@ -3,13 +3,43 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { api } from "@/services/api";
 import clientConfig from "@/config/clientConfig.json";
+import { resolveLocalizedText } from "@/utils/sectionHelpers";
 import FeedbackModal from "../FeedbackModal/FeedbackModal";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
-  const { lang, t, appMode, categories, productCategories, config, footerPages, appTitle } = useApp();
+  const { lang, t, appMode, categories, productCategories, config, footerPages, appTitle, authToken } = useApp();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+
+  const footerAdvanced = config?.website?.footerAdvanced;
+  const licenseInfo = footerAdvanced?.licenseInfo;
+  const paymentIcons = footerAdvanced?.paymentIcons;
+
+  const handleFooterNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterLoading(true);
+    try {
+      await api.subscribeNewsletter({
+        organizationId: config?.id || clientConfig.defaultOrgName || "default",
+        email: newsletterEmail.trim(),
+        source: "footer_newsletter",
+        lang,
+        token: authToken || undefined,
+      });
+      setNewsletterSuccess(true);
+      setNewsletterEmail("");
+    } catch (err) {
+      console.error("Newsletter error", err);
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
 
   const appVersion = config?.appVersion || clientConfig?.appVersion || "1.0.0";
   const appBuildIndex = config?.appBuildIndex || clientConfig?.appBuildIndex || 1;
@@ -223,8 +253,116 @@ export default function Footer() {
               </a>
             )}
           </div>
+
+          {footerAdvanced?.showNewsletter && (
+            <div style={{ marginTop: "1.25rem", width: "100%" }}>
+              {footerAdvanced.newsletterTitle && (
+                <h4 style={{ marginBottom: "0.4rem", fontSize: "0.95rem" }}>
+                  {resolveLocalizedText(footerAdvanced.newsletterTitle, lang)}
+                </h4>
+              )}
+              {newsletterSuccess ? (
+                <p style={{ fontSize: "0.85rem", color: "var(--accent)" }}>
+                  🎉 {t.successNewsletter}
+                </p>
+              ) : (
+                <form
+                  onSubmit={handleFooterNewsletter}
+                  style={{ display: "flex", gap: "0.5rem" }}
+                >
+                  <input
+                    type="email"
+                    required
+                    disabled={newsletterLoading}
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder={t.emailPlaceholder}
+                    className="customInput"
+                    style={{ padding: "0.5rem 0.75rem", fontSize: "0.85rem" }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={newsletterLoading}
+                    className="glowButton"
+                    style={{ padding: "0.5rem 0.9rem", fontSize: "0.85rem" }}
+                  >
+                    {t.subscribe}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* License & Payment Badges Bar */}
+      {(licenseInfo || (paymentIcons && paymentIcons.length > 0)) && (
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "1.5rem auto 0",
+            padding: "1rem 1.5rem",
+            borderTop: "1px solid var(--border)",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "1rem",
+            fontSize: "0.85rem",
+            opacity: 0.85,
+          }}
+        >
+          {licenseInfo && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1.25rem" }}>
+              {licenseInfo.commercialRegNumber && (
+                <span>
+                  📜 {lang === "ar" ? "السجل التجاري:" : "CR:"}{" "}
+                  <strong>{licenseInfo.commercialRegNumber}</strong>
+                </span>
+              )}
+              {licenseInfo.industrialLicenseNumber && (
+                <span>
+                  🏭 {lang === "ar" ? "الترخيص الصناعي:" : "Industrial License:"}{" "}
+                  <strong>{licenseInfo.industrialLicenseNumber}</strong>
+                </span>
+              )}
+              {licenseInfo.taxNumber && (
+                <span>
+                  🧾 {lang === "ar" ? "الرقم الضريبي:" : "Tax ID:"}{" "}
+                  <strong>{licenseInfo.taxNumber}</strong>
+                </span>
+              )}
+              {licenseInfo.trademarkName && (
+                <span>
+                  ®️ {lang === "ar" ? "العلامة المسجلة:" : "Trademark:"}{" "}
+                  <strong>{licenseInfo.trademarkName}</strong>
+                </span>
+              )}
+            </div>
+          )}
+
+          {paymentIcons && paymentIcons.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+              {paymentIcons.map((pm, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    padding: "0.25rem 0.65rem",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                    fontSize: "0.78rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  💳 {pm.replace("_", " ")}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className={styles.bottomBar}>
         <div className={styles.bottomContainer}>

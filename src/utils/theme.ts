@@ -32,7 +32,19 @@ export const formatColor = (colorStr?: string): string => {
  * Injects dynamic CSS variables into the HTML document based on the organization's config.
  * Supports light and dark modes.
  */
-export const applyTheme = (themes?: OrgConfig['themes'], isDarkMode: boolean = false): void => {
+export const applyTheme = (
+  themes?: OrgConfig['themes'],
+  isDarkMode: boolean = false,
+  themePreset?: string
+): void => {
+  if (typeof document !== 'undefined') {
+    if (themePreset) {
+      document.documentElement.setAttribute('data-theme-preset', themePreset);
+    } else {
+      document.documentElement.removeAttribute('data-theme-preset');
+    }
+  }
+
   const activePalette = isDarkMode ? themes?.dark : themes?.light;
   if (!activePalette) return;
 

@@ -488,12 +488,19 @@ export default function Navbar() {
     }
   };
 
+  const navAdv = config?.website?.navbarAdvanced;
   const excessMode = config?.website?.excessLinksMode ?? 'dropdown';
   const linksStyle = config?.website?.navbarLinksStyle ?? 'classic';
-  const navbarLayout = config?.website?.navbarLayout ?? 'classic';
+  const navbarLayout =
+    navAdv?.layoutStyle === 'floating_pill'
+      ? 'floating'
+      : config?.website?.navbarLayout ?? 'classic';
   const navbarTheme = config?.website?.navbarTheme ?? 'glass';
   // navbarSticky: true = fixed to top (default), false = scrolls with page
-  const navbarSticky = config?.website?.navbarSticky ?? true;
+  const navbarSticky =
+    navAdv?.scrollBehavior === 'static'
+      ? false
+      : config?.website?.navbarSticky ?? true;
 
   const customNavbarBg = config?.website?.customNavbarBg || config?.website?.navbarBg;
   const customNavbarTextColor = config?.website?.customNavbarTextColor || config?.website?.navbarTextColor;
@@ -534,7 +541,7 @@ export default function Navbar() {
   );
 
   const searchBlock =
-    appMode !== "blog" ? (
+    appMode !== "blog" && navAdv?.showSearch !== false ? (
       <div className={styles.searchWrapper}>
         <input
           type="text"
@@ -772,8 +779,52 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Cart Button (hidden in Blog mode) */}
-      {appMode !== "blog" && (
+      {/* Direct WhatsApp Button (NavbarAdvancedConfig) */}
+      {navAdv?.directWhatsApp?.show && (
+        <a
+          href={`https://wa.me/${(navAdv.directWhatsApp.phoneNumber || config?.socialMedia?.whatsapp || "").replace(/\D/g, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.actionButton}
+          style={{
+            background: "rgba(37, 211, 102, 0.14)",
+            color: "#25D366",
+            borderColor: "rgba(37, 211, 102, 0.35)",
+            padding: navAdv.directWhatsApp.label ? "0.4rem 0.85rem" : undefined,
+            width: navAdv.directWhatsApp.label ? "auto" : undefined,
+            borderRadius: "999px",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            gap: "0.35rem",
+          }}
+          title="WhatsApp"
+        >
+          <span>💬</span>
+          {navAdv.directWhatsApp.label && (
+            <span>
+              {typeof navAdv.directWhatsApp.label === "string"
+                ? navAdv.directWhatsApp.label
+                : navAdv.directWhatsApp.label[lang] || navAdv.directWhatsApp.label.ar}
+            </span>
+          )}
+        </a>
+      )}
+
+      {/* Primary CTA Button (NavbarAdvancedConfig) */}
+      {navAdv?.primaryCta?.show && (
+        <Link
+          href={navAdv.primaryCta.link || "/store"}
+          className="glowButton"
+          style={{ padding: "0.45rem 1rem", fontSize: "0.85rem", borderRadius: "999px" }}
+        >
+          {typeof navAdv.primaryCta.text === "string"
+            ? navAdv.primaryCta.text
+            : navAdv.primaryCta.text?.[lang] || navAdv.primaryCta.text?.ar || ""}
+        </Link>
+      )}
+
+      {/* Cart Button (hidden in Blog mode or when disabled via navbarAdvanced.showCart) */}
+      {appMode !== "blog" && navAdv?.showCart !== false && (
         <button
           onClick={() => setCartOpen(!cartOpen)}
           className={`${styles.actionButton} ${styles.cartButton}`}

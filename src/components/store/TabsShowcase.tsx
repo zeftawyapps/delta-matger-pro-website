@@ -1,49 +1,68 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
 import styles from "./StoreComponents.module.css";
 
 interface TabItem {
   icon?: string;
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  targetType?: "product" | "post" | "custom_url";
+  productId?: string;
+  postSlug?: string;
+  customUrl?: string;
 }
 
 interface Tab {
   label?: string | Record<string, string>;
   content?: string | Record<string, string>;
   items?: TabItem[];
+  targetType?: "product" | "post" | "custom_url";
+  productId?: string;
+  postSlug?: string;
+  customUrl?: string;
+  buttonText?: string | Record<string, string>;
 }
 
 interface TabsShowcaseProps {
   tabs?: Tab[];
-  title?: string;
-  description?: string;
+  title?: string | Record<string, string>;
+  description?: string | Record<string, string>;
 }
 
 export default function TabsShowcase({ tabs, title, description }: TabsShowcaseProps) {
   const { lang } = useApp();
   const [activeTab, setActiveTab] = useState(0);
 
-  const resolveText = (val?: string | Record<string, string>) => {
-    if (!val) return "";
-    if (typeof val === "string") return val;
-    return val[lang] || val.ar || "";
-  };
-
+  const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
   const displayTabs = tabs && tabs.length > 0 ? tabs : [];
   if (displayTabs.length === 0) return null;
 
   const currentTab = displayTabs[activeTab] || displayTabs[0];
   const tabItems = currentTab.items || [];
 
+  const getHref = (obj: { targetType?: string; productId?: string; postSlug?: string; customUrl?: string }) => {
+    if (obj.targetType === "product" && obj.productId) return `/store/${obj.productId}`;
+    if (obj.targetType === "post" && obj.postSlug) return `/blog/${obj.postSlug}`;
+    if (obj.targetType === "custom_url" && obj.customUrl) return obj.customUrl;
+    if (obj.productId) return `/store/${obj.productId}`;
+    if (obj.postSlug) return `/blog/${obj.postSlug}`;
+    if (obj.customUrl) return obj.customUrl;
+    return null;
+  };
+
+  const tabCtaHref = getHref(currentTab);
+  const tabCtaText = resolveLocalizedText(currentTab.buttonText, lang);
+
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {(title || description) && (
+      {hasHeader && (
         <div className={styles.landingSectionHeader}>
-          {title && <h2 className={styles.sectionTitle}>{title}</h2>}
-          {description && <p className={styles.sectionSubtitle}>{description}</p>}
+          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
         </div>
       )}
 
@@ -56,26 +75,45 @@ export default function TabsShowcase({ tabs, title, description }: TabsShowcaseP
               className={`${styles.tabButton} ${activeTab === index ? styles.tabButtonActive : ""}`}
               onClick={() => setActiveTab(index)}
             >
-              {resolveText(tab.label)}
+              {resolveLocalizedText(tab.label, lang)}
             </button>
           ))}
         </div>
 
-        <div className={`${styles.tabContent} glassCard`}>
-          {resolveText(currentTab.content) && (
-            <p className={styles.tabContentText}>{resolveText(currentTab.content)}</p>
+        <div className={`${styles.tabContent} glassCard attractiveCard`}>
+          {resolveLocalizedText(currentTab.content, lang) && (
+            <p className={styles.tabContentText}>{resolveLocalizedText(currentTab.content, lang)}</p>
           )}
           {tabItems.length > 0 && (
             <div className={styles.tabItemsGrid}>
-              {tabItems.map((item, index) => (
-                <div key={index} className={styles.tabItemCard}>
-                  <span className={styles.tabItemIcon}>{item.icon || "⚡"}</span>
-                  <div>
-                    <h4>{resolveText(item.title)}</h4>
-                    <p>{resolveText(item.description)}</p>
+              {tabItems.map((item, index) => {
+                const itemHref = getHref(item);
+                const cardInner = (
+                  <>
+                    <span className={styles.tabItemIcon}>{item.icon || "⚡"}</span>
+                    <div>
+                      <h4>{resolveLocalizedText(item.title, lang)}</h4>
+                      <p>{resolveLocalizedText(item.description, lang)}</p>
+                    </div>
+                  </>
+                );
+                return itemHref ? (
+                  <Link key={index} href={itemHref} className={styles.tabItemCard} style={{ textDecoration: "none" }}>
+                    {cardInner}
+                  </Link>
+                ) : (
+                  <div key={index} className={styles.tabItemCard}>
+                    {cardInner}
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+          {tabCtaHref && (
+            <div style={{ marginTop: "1.25rem", display: "flex", justifyContent: "center" }}>
+              <Link href={tabCtaHref} className="glowButton">
+                {tabCtaText || (lang === "ar" ? "تصفح التفاصيل" : "View Details")}
+              </Link>
             </div>
           )}
         </div>

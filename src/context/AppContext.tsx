@@ -574,7 +574,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // Apply visual colors on config themes change or theme toggling
   useEffect(() => {
     if (config?.themes) {
-      applyTheme(config.themes, theme === "dark");
+      applyTheme(config.themes, theme === "dark", config.website?.themePreset);
     }
   }, [config, theme]);
 

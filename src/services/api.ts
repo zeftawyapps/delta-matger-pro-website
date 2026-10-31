@@ -1184,5 +1184,51 @@ export const api = {
     });
 
     return getResponseData(payloadRes);
+  },
+
+  // 9. Subscribe to Newsletter (Real Backend Integration)
+  subscribeNewsletter: async (args: {
+    organizationId: string;
+    email: string;
+    source?: string;
+    lang?: string;
+    token?: string;
+  }): Promise<any> => {
+    const campaignAttribution = getCampaignAttribution();
+    const bodyPayload = {
+      organizationId: args.organizationId,
+      email: args.email.trim(),
+      source: args.source || 'footer_newsletter',
+      campaignAttribution: campaignAttribution || undefined,
+      lang: args.lang || 'ar',
+      subscribedAt: new Date().toISOString(),
+    };
+
+    try {
+      const payloadRes = await requestJson('/newsletter/subscribe', {
+        method: 'POST',
+        token: args.token,
+        body: JSON.stringify(bodyPayload),
+      });
+      return getResponseData(payloadRes);
+    } catch (err: any) {
+      // If dedicated /newsletter/subscribe endpoint is not yet deployed on older backend,
+      // fallback to /feedback/submit with type 'newsletter_subscription' so admin still receives it in DB!
+      if (err?.message?.includes('404') || err?.message?.includes('Not Found')) {
+        const fallbackRes = await requestJson('/feedback/submit', {
+          method: 'POST',
+          token: args.token,
+          body: JSON.stringify({
+            organizationId: args.organizationId,
+            type: 'newsletter_subscription',
+            userName: 'Newsletter Subscriber',
+            userEmail: args.email.trim(),
+            comment: JSON.stringify(bodyPayload),
+          }),
+        });
+        return getResponseData(fallbackRes);
+      }
+      throw err;
+    }
   }
 };

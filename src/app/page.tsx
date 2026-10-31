@@ -29,12 +29,31 @@ import Showcase from "@/components/store/Showcase";
 import PricingSection from "@/components/store/PricingSection";
 import ContactUs from "@/components/store/ContactUs";
 
+// New Blueprint Sections (12 Interactive Widgets)
+import HeroSaasInteractive from "@/components/sections/HeroSaasInteractive";
+import QuickTrustStrip from "@/components/sections/QuickTrustStrip";
+import PainPointAgitation from "@/components/sections/PainPointAgitation";
+import ComparisonMatrix from "@/components/sections/ComparisonMatrix";
+import SystemScreensShowcase from "@/components/sections/SystemScreensShowcase";
+import ProcessStepsInteractive from "@/components/sections/ProcessStepsInteractive";
+import VideoExplainerShowcase from "@/components/sections/VideoExplainerShowcase";
+import TargetAudienceIndustries from "@/components/sections/TargetAudienceIndustries";
+import UrgencyOfferStrip from "@/components/sections/UrgencyOfferStrip";
+import EcosystemIntegrations from "@/components/sections/EcosystemIntegrations";
+import PricingSaasSlider from "@/components/sections/PricingSaasSlider";
+import HighImpactCtaBanner from "@/components/sections/HighImpactCtaBanner";
+
 // Hybrid layouts
 import Link from "next/link";
 import IntroSlides from "@/components/intro/IntroSlides";
 import { getIntroConfigFromSection, normalizeIntroDisplayMode } from "@/utils/introConfig";
 import { isHtml, stripHtml } from "@/utils/html";
 import { getFullImageUrl } from "@/services/api";
+import {
+  getSectionHeaderTexts,
+  resolveLocalizedText,
+  buildSectionBackgroundProps,
+} from "@/utils/sectionHelpers";
 import styles from "./Home.module.css";
 
 function HomepageContent() {
@@ -194,16 +213,64 @@ function HomepageContent() {
   // RENDER SECTIONS CORRESPONDING TO CONFIG
   const renderSection = (section: any) => {
     const sType = (section.type || "").toLowerCase().trim();
+    const { titleText, descText, hasHeader } = getSectionHeaderTexts(section, lang);
 
     const isBoxed = section.config?.boxedLayout === true;
     const hasShadow = section.config?.hasShadow === true;
+    const rawBgConfig =
+      section.config?.background ||
+      section.background ||
+      (section.config?.glowColor || section.config?.dividerTop || section.config?.dividerBottom
+        ? {
+            type: section.config?.backgroundType,
+            glowColor: section.config?.glowColor,
+            solidColor: section.config?.backgroundColor,
+            dividerTop: section.config?.dividerTop,
+            dividerBottom: section.config?.dividerBottom,
+          }
+        : undefined);
+    const bgProps = buildSectionBackgroundProps(rawBgConfig, section.config?.backgroundColor);
 
-    // wrapper to apply boxed layout and shadow dynamically
+    // wrapper to apply boxed layout, shadow, and Section Background Rhythm Engine dynamically
     const wrapInLayout = (content: React.ReactNode) => {
-      if (!isBoxed) return content;
-      return (
-        <div key={`wrap-${section.id}`} className={`${styles.boxedSection} ${hasShadow ? styles.shadowSection : ''}`}>
+      if (!content) return null;
+
+      const inner = isBoxed ? (
+        <div
+          key={`box-${section.id}`}
+          className={`${styles.boxedSection} ${hasShadow ? styles.shadowSection : ""}`}
+        >
           {content}
+        </div>
+      ) : (
+        content
+      );
+
+      if (!bgProps.hasActiveBackground) return inner;
+
+      const orbPosClass = `orbPos-${rawBgConfig?.glowPosition || "center"}`;
+      return (
+        <div
+          key={`rhythm-${section.id}`}
+          className={`sectionRhythmWrapper ${bgProps.className}`}
+          style={bgProps.style}
+        >
+          {bgProps.dividerTop === "glow_line" && (
+            <div className="sectionDividerGlowLine" style={bgProps.dividerStyle} />
+          )}
+          {bgProps.dividerTop === "gradient_fade" && (
+            <div className="sectionDividerGradientFade" />
+          )}
+          {bgProps.hasGlowOrb && (
+            <div className={`sectionGlowOrb ${orbPosClass}`} style={bgProps.glowStyle} />
+          )}
+          <div className="sectionRhythmInner">{inner}</div>
+          {bgProps.dividerBottom === "glow_line" && (
+            <div className="sectionDividerGlowLine" style={bgProps.dividerStyle} />
+          )}
+          {bgProps.dividerBottom === "gradient_fade" && (
+            <div className="sectionDividerGradientFade" />
+          )}
         </div>
       );
     };
@@ -227,8 +294,8 @@ function HomepageContent() {
             key={`${section.id}_${appMode}`}
             config={introConfig}
             displayMode={normalizeIntroDisplayMode(section.displayMode)}
-            title={section.title}
-            description={section.description}
+            title={titleText}
+            description={descText}
           />
         );
       }
@@ -270,21 +337,19 @@ function HomepageContent() {
       return wrapInLayout(<PromotedOffers key={section.id} variant={section.config?.variant} />);
     }
 
-    // 3. CATEGORIES FILTERS
+    // 3. CATEGORIES FILTERS (Zero Default Titles enforced)
     if (sType === "categories") {
       if (appMode === "blog") {
         return wrapInLayout(
           <div key={section.id} className={styles.filterWrapper}>
-            <div className={styles.sectionHeader}>
-              <div className={styles.titleArea}>
-                <h2 className={styles.sectionTitle}>
-                  {section.title || (lang === "ar" ? "تصفح مقالات المدونة" : "Browse Articles")}
-                </h2>
-                {section.description && (
-                  <p className={styles.sectionSubtitle}>{section.description}</p>
-                )}
+            {hasHeader && (
+              <div className={styles.sectionHeader}>
+                <div className={styles.titleArea}>
+                  {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+                  {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+                </div>
               </div>
-            </div>
+            )}
             <CategoryPills
               activeCategory={activeBlogCategory}
               onSelectCategory={handleSelectBlogCategory}
@@ -297,15 +362,15 @@ function HomepageContent() {
             key={section.id}
             activeCategory={activeStoreCategory}
             onSelectCategory={handleSelectStoreCategory}
-            title={section.title}
-            description={section.description}
+            title={titleText}
+            description={descText}
             variant={section.config?.variant}
           />
         );
       }
     }
 
-    // 4. NEW PRODUCTS & BEST SELLERS
+    // 4. NEW PRODUCTS & BEST SELLERS (Zero Default Titles enforced)
     if ((sType === "new_products" || sType === "best_seller" || sType === "products") && appMode !== "blog") {
       const isNew = sType === "new_products";
       const isBest = sType === "best_seller";
@@ -324,28 +389,23 @@ function HomepageContent() {
 
       return wrapInLayout(
         <div key={section.id} id="store-sec" className={styles.storeSectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.titleArea}>
-              <h2 className={styles.sectionTitle}>
-                {section.title ||
-                  (sType === "new_products"
-                    ? (lang === "ar" ? "وصل حديثاً" : "New Arrivals")
-                    : (lang === "ar" ? "الأكثر مبيعاً" : "Best Sellers"))}
-              </h2>
-              {section.description && (
-                <p className={styles.sectionSubtitle}>{section.description}</p>
-              )}
+          {hasHeader && (
+            <div className={styles.sectionHeader}>
+              <div className={styles.titleArea}>
+                {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+              </div>
+              <Link href="/store" className={styles.viewAllBtn}>
+                {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
+              </Link>
             </div>
-            <Link href="/store" className={styles.viewAllBtn}>
-              {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
-            </Link>
-          </div>
+          )}
           <ProductGrid products={list} columns={columns} />
         </div>
       );
     }
 
-    // 5. BLOG POSTS LISTS (latest, most-read, featured/joker)
+    // 5. BLOG POSTS LISTS (latest, most-read, featured/joker) - Zero Default Titles enforced
     const jokerSectionAliases = new Set([
       "joker_post",
       "joker_posts",
@@ -367,9 +427,7 @@ function HomepageContent() {
         if (isMostRead) return p.isMost;
         return true;
       });
-      // most_read fallback: if none flagged, show all so the section isn't empty.
       if (isMostRead && list.length === 0) list = filteredPosts;
-      // joker fallback: support environments where only one legacy flag maps through.
       if (isJoker && list.length === 0) list = filteredPosts;
 
       const limit = section.config?.limit;
@@ -382,31 +440,26 @@ function HomepageContent() {
           <JokerPost
             key={section.id}
             posts={list}
-            title={section.title}
-            description={section.description}
+            title={titleText}
+            description={descText}
             config={section.config}
           />
         );
       }
 
-      const defaultTitle = isMostRead
-        ? (lang === "ar" ? "الأكثر قراءة" : "Most Read")
-        : (lang === "ar" ? "آخر مقالات المدونة" : "Latest Articles");
-
       return wrapInLayout(
         <div key={section.id} id="blog-sec" className={styles.blogSectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.titleArea}>
-              <h2 className={styles.sectionTitle}>{section.title || defaultTitle}</h2>
-              {section.description && (
-                <p className={styles.sectionSubtitle}>{section.description}</p>
-              )}
+          {hasHeader && (
+            <div className={styles.sectionHeader}>
+              <div className={styles.titleArea}>
+                {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+              </div>
+              <Link href="/blog" className={styles.viewAllBtn}>
+                {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
+              </Link>
             </div>
-            <Link href="/blog" className={styles.viewAllBtn}>
-              {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
-            </Link>
-          </div>
-          {/* Featured Post Card in normal state (only in grid mode, not in slider/horizontal_list) */}
+          )}
           {!isSearching && featured && !isMostRead && (!section.displayMode || section.displayMode === "grid") && (
             <FeaturedPost post={featured} />
           )}
@@ -415,111 +468,144 @@ function HomepageContent() {
       );
     }
 
-    // 6. BANNER / CUSTOM BANNER
+    // 6. BANNER / CUSTOM BANNER (Zero Default Titles enforced)
     if (sType === "banner" || sType === "custom_banner") {
       const variant = section.config?.variant || "promo_card";
-      
-      const titleText = section.title 
-        || section.config?.title 
-        || (lang === "ar" ? "اقرأ دليلنا الشامل لمنتجاتنا الموصى بها!" : "Read our comprehensive guides!");
-      
-      // Determine description: check section.description, section.config.description, and fallback to imageUrl if it's text
+      const bannerTitle = titleText || resolveLocalizedText(section.config?.title, lang);
       const configImgUrl = section.config?.imageUrl || "";
-      const isImgUrlActualLink = configImgUrl.startsWith("http") || configImgUrl.startsWith("/") || configImgUrl.includes(".");
-      
-      const descText = section.description 
-        || section.config?.description 
-        || (!isImgUrlActualLink ? configImgUrl : "")
-        || (lang === "ar" ? "احصل على عروض مذهلة اليوم." : "Get amazing deals today.");
-        
-      const buttonText = section.config?.buttonText || (lang === "ar" ? "تصفح الآن" : "Browse Now");
+      const isImgUrlActualLink =
+        configImgUrl.startsWith("http") ||
+        configImgUrl.startsWith("/") ||
+        configImgUrl.includes(".");
+
+      const bannerDesc =
+        descText ||
+        resolveLocalizedText(section.config?.description, lang) ||
+        (!isImgUrlActualLink ? configImgUrl : "");
+
+      const buttonText = resolveLocalizedText(section.config?.buttonText, lang);
       const buttonLink = section.config?.buttonLink || section.config?.linkUrl || "/store";
-      
       const bannerBgImage = isImgUrlActualLink ? getFullImageUrl(configImgUrl) : "";
 
       if (variant === "offers_box") {
         return wrapInLayout(
-          <section key={section.id} className={`${styles.offersSection} animateFadeUp`} style={{ width: "100%", maxWidth: "1200px", margin: "0 auto", padding: "3rem 1.5rem" }}>
-            <div 
-              className={`${styles.offersBox} glassCard`} 
-              style={{ 
-                padding: "3rem 2rem", 
+          <section
+            key={section.id}
+            className={`${styles.offersSection} animateFadeUp`}
+            style={{ width: "100%", maxWidth: "1200px", margin: "0 auto", padding: "3rem 1.5rem" }}
+          >
+            <div
+              className={`${styles.offersBox} glassCard attractiveCard`}
+              style={{
+                padding: "3rem 2rem",
                 borderRadius: "var(--radius-lg)",
-                backgroundImage: bannerBgImage ? `url(${bannerBgImage})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
+                backgroundImage: bannerBgImage ? `url(${bannerBgImage})` : "none",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
               }}
             >
-              <div className={styles.offersContent} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", textAlign: "center" }}>
-                <span className={styles.offersBadge}>{lang === "ar" ? "عرض خاص" : "Special Offer"}</span>
-                <h3 style={{ fontSize: "clamp(1.4rem, 1.2rem + 1.2vw, 2.2rem)", fontWeight: "800", margin: 0 }}>{titleText}</h3>
-                <p style={{ opacity: 0.7, margin: 0 }}>{descText}</p>
-                <Link href={buttonLink} className="glowButton">
-                  {buttonText}
-                </Link>
+              <div
+                className={styles.offersContent}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "1.25rem",
+                  textAlign: "center",
+                }}
+              >
+                {section.config?.badgeText && (
+                  <span className={styles.offersBadge}>
+                    {resolveLocalizedText(section.config.badgeText, lang)}
+                  </span>
+                )}
+                {bannerTitle && (
+                  <h3 style={{ fontSize: "clamp(1.4rem, 1.2rem + 1.2vw, 2.2rem)", fontWeight: "800", margin: 0 }}>
+                    {bannerTitle}
+                  </h3>
+                )}
+                {bannerDesc && <p style={{ opacity: 0.78, margin: 0 }}>{bannerDesc}</p>}
+                {buttonText && (
+                  <Link href={buttonLink} className="glowButton">
+                    {buttonText}
+                  </Link>
+                )}
               </div>
             </div>
           </section>
         );
       }
 
-      // Default: promo_card (the long horizontal banner layout)
       return wrapInLayout(
         <section key={section.id} className={`${styles.promoBanner} animateFadeUp`}>
-          <div 
-            className={`${styles.promoCard} glassCard`}
-            style={{ 
-              backgroundImage: bannerBgImage ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${bannerBgImage})` : 'none',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              color: bannerBgImage ? '#fff' : 'inherit'
+          <div
+            className={`${styles.promoCard} glassCard attractiveCard`}
+            style={{
+              backgroundImage: bannerBgImage
+                ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${bannerBgImage})`
+                : "none",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              color: bannerBgImage ? "#fff" : "inherit",
             }}
           >
             <div className={styles.promoText}>
-              <h3>{titleText}</h3>
-              <p style={{ color: bannerBgImage ? '#eee' : 'inherit' }}>{descText}</p>
+              {bannerTitle && <h3>{bannerTitle}</h3>}
+              {bannerDesc && <p style={{ color: bannerBgImage ? "#eee" : "inherit" }}>{bannerDesc}</p>}
             </div>
-            <div className={styles.promoActions}>
-              <Link href={buttonLink} className="glowButton">
-                {buttonText}
-              </Link>
-            </div>
+            {buttonText && (
+              <div className={styles.promoActions}>
+                <Link href={buttonLink} className="glowButton">
+                  {buttonText}
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       );
     }
 
-    // 7. ABOUT COMPANY / SINGLE POST (مقال كامل مستقل)
-    if (sType === "about_company" && appMode !== "store") {
+    // 7. ABOUT COMPANY / SINGLE POST (Supports all appModes + inline content or postSlug)
+    if (sType === "about_company") {
       const slug = section.config?.postSlug;
-      if (!slug) return null;
-      const post = posts.find((p) => p.slug === slug);
-      if (!post) return null;
-      
-      const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
-      const titleStr = stripHtml(rawTitle);
-      const contentStr = typeof post.content === "string" ? post.content : post.content?.[lang as any] || post.content?.ar || "";
+      const post = slug ? posts.find((p) => p.slug === slug) : undefined;
+
+      const rawTitle = post
+        ? typeof post.title === "string"
+          ? post.title
+          : post.title?.[lang as any] || post.title?.ar || ""
+        : "";
+      const postTitleStr = stripHtml(rawTitle);
+      const contentStr = post
+        ? typeof post.content === "string"
+          ? post.content
+          : post.content?.[lang as any] || post.content?.ar || ""
+        : resolveLocalizedText(section.config?.content || section.config?.text, lang);
+
+      if (!contentStr && !post) return null;
+
       const isHtmlContent = isHtml(contentStr);
-      const imgUrl = post.imageUrl || (post as any).image;
-      
-      // موضع الصورة المحدد (يسار افتراضياً)
-      const imgPosition = section.config?.imagePosition ?? 'left';
+      const rawImg = section.config?.imageUrl || post?.imageUrl || (post as any)?.image;
+      const imgUrl = rawImg ? getFullImageUrl(rawImg) : "";
+
+      const imgPosition = section.config?.imagePosition ?? "left";
       const contentClass = `${styles.aboutCompanyContent} ${styles[`imgPos_${imgPosition}`]}`;
+      const finalHeaderTitle = titleText || (section.title === undefined ? postTitleStr : "");
 
       return wrapInLayout(
         <section key={section.id} className={styles.aboutCompanySectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.titleArea}>
-              <h2 className={styles.sectionTitle}>{section.title || titleStr}</h2>
-              {section.description && (
-                <p className={styles.sectionSubtitle}>{section.description}</p>
-              )}
+          {(finalHeaderTitle || descText) && (
+            <div className={styles.sectionHeader}>
+              <div className={styles.titleArea}>
+                {finalHeaderTitle && <h2 className={styles.sectionTitle}>{finalHeaderTitle}</h2>}
+                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+              </div>
             </div>
-          </div>
+          )}
           <div className={contentClass}>
             {imgUrl && (
               <div className={styles.aboutCompanyImageWrapper}>
-                <img src={imgUrl} alt={titleStr} className={styles.aboutCompanyImage} />
+                <img src={imgUrl} alt={finalHeaderTitle || "About"} className={styles.aboutCompanyImage} />
               </div>
             )}
             <div className={styles.aboutCompanyText}>
@@ -530,7 +616,9 @@ function HomepageContent() {
                 />
               ) : (
                 contentStr.split("\n\n").map((paragraph, idx) => (
-                  <p key={idx} className={styles.aboutParagraph}>{paragraph}</p>
+                  <p key={idx} className={styles.aboutParagraph}>
+                    {paragraph}
+                  </p>
                 ))
               )}
             </div>
@@ -541,22 +629,49 @@ function HomepageContent() {
 
     // 8. TRUST BADGES
     if (sType === "trust_badges") {
-      return wrapInLayout(<TrustBadges key={section.id} items={section.config?.items} />);
+      return wrapInLayout(
+        <TrustBadges
+          key={section.id}
+          items={section.config?.items}
+          title={titleText}
+          description={descText}
+        />
+      );
     }
 
     // 9. TESTIMONIALS
     if (sType === "testimonials") {
-      return wrapInLayout(<Testimonials key={section.id} />);
+      return wrapInLayout(
+        <Testimonials
+          key={section.id}
+          items={section.config?.items}
+          title={titleText}
+          description={descText}
+        />
+      );
     }
 
     // 10. FAQS
     if (sType === "faqs") {
-      return wrapInLayout(<FAQSection key={section.id} items={section.config?.items} />);
+      return wrapInLayout(
+        <FAQSection
+          key={section.id}
+          items={section.config?.items}
+          title={titleText}
+          description={descText}
+        />
+      );
     }
 
     // 11. NEWSLETTER SIGNUP
     if (sType === "newsletter_signup") {
-      return wrapInLayout(<NewsletterSignup key={section.id} />);
+      return wrapInLayout(
+        <NewsletterSignup
+          key={section.id}
+          title={titleText}
+          description={descText}
+        />
+      );
     }
 
     // 12. FEATURES GRID
@@ -565,32 +680,32 @@ function HomepageContent() {
         <FeaturesGrid
           key={section.id}
           items={section.config?.items}
-          title={section.title}
-          description={section.description}
+          title={titleText}
+          description={descText}
         />
       );
     }
 
-    // 13. TABS SHOWCASE (system architecture)
+    // 13. TABS SHOWCASE
     if (sType === "tabs_showcase") {
       return wrapInLayout(
         <TabsShowcase
           key={section.id}
           tabs={section.config?.tabs}
-          title={section.title}
-          description={section.description}
+          title={titleText}
+          description={descText}
         />
       );
     }
 
-    // 14. SHOWCASE (mockup gallery)
+    // 14. SHOWCASE
     if (sType === "showcase") {
       return wrapInLayout(
         <Showcase
           key={section.id}
           tabs={section.config?.tabs}
-          title={section.title}
-          description={section.description}
+          title={titleText}
+          description={descText}
           displayMode={section.displayMode}
         />
       );
@@ -602,8 +717,8 @@ function HomepageContent() {
         <PricingSection
           key={section.id}
           plans={section.config?.plans}
-          title={section.title}
-          description={section.description}
+          title={titleText}
+          description={descText}
           displayMode={section.displayMode}
         />
       );
@@ -615,8 +730,144 @@ function HomepageContent() {
         <ContactUs
           key={section.id}
           config={section.config}
+          title={titleText}
+          description={descText}
+        />
+      );
+    }
+
+    // =========================================================================
+    // NEW 12 BLUEPRINT SECTIONS (SECTIONS_AND_DESIGN_PLAN.md)
+    // =========================================================================
+
+    if (sType === "hero_saas_interactive") {
+      return wrapInLayout(
+        <HeroSaasInteractive
+          key={section.id}
           title={section.title}
           description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "quick_trust_strip") {
+      return wrapInLayout(
+        <QuickTrustStrip
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "pain_point_agitation") {
+      return wrapInLayout(
+        <PainPointAgitation
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "comparison_matrix") {
+      return wrapInLayout(
+        <ComparisonMatrix
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "system_screens_showcase") {
+      return wrapInLayout(
+        <SystemScreensShowcase
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "process_steps_interactive") {
+      return wrapInLayout(
+        <ProcessStepsInteractive
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "video_explainer_showcase") {
+      return wrapInLayout(
+        <VideoExplainerShowcase
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "target_audience_industries") {
+      return wrapInLayout(
+        <TargetAudienceIndustries
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "urgency_offer_strip") {
+      return wrapInLayout(
+        <UrgencyOfferStrip
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "ecosystem_integrations") {
+      return wrapInLayout(
+        <EcosystemIntegrations
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "pricing_saas_slider") {
+      return wrapInLayout(
+        <PricingSaasSlider
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
+        />
+      );
+    }
+
+    if (sType === "high_impact_cta_banner") {
+      return wrapInLayout(
+        <HighImpactCtaBanner
+          key={section.id}
+          title={section.title}
+          description={section.description}
+          config={section.config}
         />
       );
     }

@@ -2,41 +2,43 @@
 
 import React from "react";
 import { useApp } from "@/context/AppContext";
+import { getSectionHeaderTexts } from "@/utils/sectionHelpers";
 import styles from "./StoreComponents.module.css";
 
 interface CategoryGridProps {
   activeCategory: string;
   onSelectCategory: (category: string) => void;
-  title?: string;
-  description?: string;
+  title?: string | Record<string, string>;
+  description?: string | Record<string, string>;
   variant?: string;
 }
 
-export default function CategoryGrid({ 
-  activeCategory, 
-  onSelectCategory, 
-  title, 
+export default function CategoryGrid({
+  activeCategory,
+  onSelectCategory,
+  title,
   description,
-  variant = "glass_card"
+  variant = "glass_card",
 }: CategoryGridProps) {
-  const { lang, t, productCategories } = useApp();
+  const { lang, productCategories } = useApp();
+  const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
 
   const presets = [
     {
       id: "electronics",
       title: { ar: "الإلكترونيات", en: "Electronics" },
-      image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300"
+      image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300",
     },
     {
       id: "accessories",
-      title: { ar: "الإسسوارات", en: "Accessories" },
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300"
+      title: { ar: "الإكسسوارات", en: "Accessories" },
+      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
     },
     {
       id: "apparel",
       title: { ar: "الملابس", en: "Apparel" },
-      image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=300"
-    }
+      image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=300",
+    },
   ];
 
   const displayList = productCategories.map((c) => {
@@ -44,7 +46,10 @@ export default function CategoryGrid({
     return {
       id: c.id,
       title: { ar: nameStr, en: nameStr },
-      image: c.imageUrl || c.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
+      image:
+        c.imageUrl ||
+        c.image ||
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300",
     };
   });
 
@@ -52,13 +57,15 @@ export default function CategoryGrid({
 
   return (
     <section className={`${styles.categorySection} animateFadeUp`}>
-      <div className={styles.sectionHeader}>
-        <div className={styles.titleArea}>
-          <h2 className={styles.sectionTitle}>{title || t.popularCategories}</h2>
-          {description && <p className={styles.sectionSubtitle}>{description}</p>}
+      {hasHeader && (
+        <div className={styles.sectionHeader}>
+          <div className={styles.titleArea}>
+            {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+            {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+          </div>
         </div>
-      </div>
-      
+      )}
+
       {/* Horizontal scrollable categories list */}
       <div className={styles.categoryHorizontalList}>
         {finalCategories.map((cat) => {
@@ -69,7 +76,9 @@ export default function CategoryGrid({
               <button
                 key={cat.id}
                 onClick={() => onSelectCategory(cat.id)}
-                className={`${styles.categoryPill} ${activeCategory === cat.id ? styles.activeCategoryPill : ""}`}
+                className={`${styles.categoryPill} ${
+                  activeCategory === cat.id ? styles.activeCategoryPill : ""
+                }`}
                 role="button"
                 aria-pressed={activeCategory === cat.id}
               >
@@ -83,7 +92,9 @@ export default function CategoryGrid({
               <div
                 key={cat.id}
                 onClick={() => onSelectCategory(cat.id)}
-                className={`${styles.categoryRoundItem} ${activeCategory === cat.id ? styles.activeCategoryRoundItem : ""}`}
+                className={`${styles.categoryRoundItem} ${
+                  activeCategory === cat.id ? styles.activeCategoryRoundItem : ""
+                }`}
                 role="button"
                 aria-pressed={activeCategory === cat.id}
               >
@@ -100,15 +111,15 @@ export default function CategoryGrid({
             <div
               key={cat.id}
               onClick={() => onSelectCategory(cat.id)}
-              className={`${styles.categoryCard} glassCard ${activeCategory === cat.id ? styles.activeCategoryCard : ""}`}
+              className={`${styles.categoryCard} glassCard ${
+                activeCategory === cat.id ? styles.activeCategory : ""
+              }`}
               role="button"
               aria-pressed={activeCategory === cat.id}
             >
-              <div className={styles.catImgWrapper}>
-                <img src={cat.image} alt={name} className={styles.catImg} />
-              </div>
+              <img src={cat.image} alt={name} className={styles.catImage} />
               <div className={styles.catOverlay}>
-                <h3>{name}</h3>
+                <span>{name}</span>
               </div>
             </div>
           );

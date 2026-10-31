@@ -1,11 +1,20 @@
 "use client";
 
+import React from "react";
 import { useApp } from "@/context/AppContext";
 import { formatPrice } from "@/utils/currency";
+import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
 import styles from "./StoreComponents.module.css";
 
-export default function TrustBadges({ items }: { items?: any[] }) {
+interface TrustBadgesProps {
+  items?: any[];
+  title?: string | Record<string, string>;
+  description?: string | Record<string, string>;
+}
+
+export default function TrustBadges({ items, title, description }: TrustBadgesProps) {
   const { lang, t, organizationPolicy } = useApp();
+  const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
 
   let shippingDesc = t.trustShippingSub;
   if (organizationPolicy?.shipping) {
@@ -15,34 +24,40 @@ export default function TrustBadges({ items }: { items?: any[] }) {
       shippingDesc = lang === "ar" ? "شحن مجاني على جميع الطلبات" : "Free shipping on all orders";
     } else if (typeof defaultFee === "number") {
       const formattedFee = formatPrice(defaultFee, currency, lang);
-      shippingDesc = lang === "ar" 
-        ? `شحن سريع بقيمة ${formattedFee}` 
-        : `Fast shipping for only ${formattedFee}`;
+      shippingDesc =
+        lang === "ar"
+          ? `شحن سريع بقيمة ${formattedFee}`
+          : `Fast shipping for only ${formattedFee}`;
     }
   }
-  
-  const displayItems = items && items.length > 0 ? items : [
-    { icon: "🚚", title: t.trustShipping, description: shippingDesc },
-    { icon: "🛡️", title: t.trustSecurity, description: t.trustSecuritySub },
-    { icon: "🎧", title: t.trustSupport, description: t.trustSupportSub }
-  ];
+
+  const displayItems =
+    items && items.length > 0
+      ? items
+      : [
+          { icon: "🚚", title: t.trustShipping, description: shippingDesc },
+          { icon: "🛡️", title: t.trustSecurity, description: t.trustSecuritySub },
+          { icon: "🎧", title: t.trustSupport, description: t.trustSupportSub },
+        ];
 
   return (
     <section className={`${styles.trustSection} animateFadeUp`}>
+      {hasHeader && (
+        <div className={styles.landingSectionHeader}>
+          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
+          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
+        </div>
+      )}
       <div className={styles.trustGrid}>
         {displayItems.map((item, index) => {
-          const titleStr = typeof item.title === "string" 
-            ? item.title 
-            : item.title?.[lang] || item.title?.ar || "";
-          const descStr = typeof item.description === "string" 
-            ? item.description 
-            : item.description?.[lang] || item.description?.ar || "";
+          const titleStr = resolveLocalizedText(item.title, lang);
+          const descStr = resolveLocalizedText(item.description || item.desc, lang);
           return (
-            <div key={index} className={`${styles.trustCard} glassCard`}>
+            <div key={index} className={`${styles.trustCard} glassCard attractiveCard`}>
               <span className={styles.trustIcon}>{item.icon || "✓"}</span>
               <div>
-                <h4>{titleStr}</h4>
-                <p>{descStr}</p>
+                {titleStr && <h4>{titleStr}</h4>}
+                {descStr && <p>{descStr}</p>}
               </div>
             </div>
           );

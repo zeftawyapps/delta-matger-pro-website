@@ -242,14 +242,113 @@ export interface IntroSlideConfig {
   contentSource?: 'auto' | 'intro_posts' | 'joker_products' | 'posts' | 'products' | 'joker';
 }
 
+export type ThemePreset = 'dark_tech' | 'clean_minimal' | 'luxury_gold' | 'vibrant_ecom';
+
+export interface SectionBackgroundConfig {
+  type?: 'theme_default' | 'solid' | 'gradient_linear' | 'mesh_glow' | 'subtle_tint' | 'contrast_break' | 'radial_spotlight';
+  solidColor?: string;
+  gradientColors?: [string, string] | [string, string, string];
+  gradientAngle?: number;
+  glowColor?: string;
+  glowPosition?: 'top' | 'center' | 'bottom' | 'corners';
+  hasPattern?: boolean;
+  dividerTop?: 'none' | 'glow_line' | 'gradient_fade';
+  dividerBottom?: 'none' | 'glow_line' | 'gradient_fade';
+}
+
+export interface SystemShowcaseHotspot {
+  x: number;
+  y: number;
+  title?: string | LocalizedString;
+  description?: string | LocalizedString;
+  targetType?: 'product' | 'post' | 'custom_url';
+  productId?: string;
+  postSlug?: string;
+  customUrl?: string;
+}
+
+export interface SystemShowcaseItem {
+  id: string;
+  tabLabel?: string | LocalizedString;
+  label?: string | LocalizedString;
+  imageUrl: string;
+  description?: string | LocalizedString;
+  targetType: 'product' | 'post' | 'custom_url';
+  productId?: string;
+  postSlug?: string;
+  customUrl?: string;
+  buttonText?: string | LocalizedString;
+  actionButton?: {
+    show: boolean;
+    text: string | LocalizedString;
+  };
+  floatingBadge?: {
+    show: boolean;
+    type: 'price_tag' | 'reading_time' | 'verified';
+    text?: string;
+  };
+  hotspots?: SystemShowcaseHotspot[];
+}
+
+export interface NavbarAdvancedConfig {
+  layoutStyle?: 'floating_pill' | 'full_width_glass' | 'solid_classic';
+  scrollBehavior?: 'sticky' | 'hide_on_scroll_down' | 'static';
+  showCart?: boolean;
+  showSearch?: boolean;
+  showAuth?: boolean;
+  showThemeToggle?: boolean;
+  showLanguageSwitch?: boolean;
+  primaryCta?: {
+    show: boolean;
+    text: string | LocalizedString;
+    link: string;
+    variant: 'solid' | 'gradient' | 'outline';
+    gradientColors?: [string, string];
+  };
+  directWhatsApp?: {
+    show: boolean;
+    phoneNumber?: string;
+    label?: string | LocalizedString;
+  };
+  menuStyle?: 'dropdown' | 'mega_menu' | 'sidebar_drawer';
+}
+
+export interface FooterAdvancedConfig {
+  layout?: '4_columns' | '3_columns' | '5_columns' | 'minimal_centered';
+  showNewsletter?: boolean;
+  newsletterTitle?: string | LocalizedString;
+  newsletterSubtitle?: string | LocalizedString;
+  showTrustBadges?: boolean;
+  paymentIcons?: ('mada' | 'visa' | 'mastercard' | 'apple_pay' | 'tamara' | 'tabby' | 'vodafone_cash' | 'instapay' | 'fawry')[];
+  licenseInfo?: {
+    showCommercialReg?: boolean;
+    commercialRegNumber?: string;
+    showIndustrialLicense?: boolean;
+    industrialLicenseNumber?: string;
+    showTaxNumber?: boolean;
+    taxNumber?: string;
+    trademarkName?: string;
+    foundedYear?: string;
+    maroofBadgeUrl?: string;
+  };
+  showPolicies?: boolean;
+  showSocialMedia?: boolean;
+  backgroundStyle?: 'dark_mesh' | 'glass_blur' | 'solid' | 'brand_tinted';
+}
+
 export interface WebsiteSection {
   id: string;
   type: string;
-  displayMode?: DisplayMode;
-  title?: string;
-  subtitle?: string;
+  displayMode?: DisplayMode | string;
+  title?: string | LocalizedString;
+  description?: string | LocalizedString;
+  subtitle?: string | LocalizedString;
   isActive?: boolean;
   config?: {
+    // Section background rhythm engine
+    background?: SectionBackgroundConfig;
+    boxedLayout?: boolean;
+    hasShadow?: boolean;
     // intro_slides: separate configs per appMode
     introHybrid?: IntroSlideConfig;
     introBlog?: IntroSlideConfig;
@@ -260,7 +359,9 @@ export interface WebsiteSection {
     // blog posts
     limit?: number;
     // banner / generic
-    buttonText?: string;
+    title?: string | LocalizedString;
+    description?: string | LocalizedString;
+    buttonText?: string | LocalizedString;
     buttonLink?: string;
     backgroundColor?: string;
     margin?: number;
@@ -270,8 +371,16 @@ export interface WebsiteSection {
     linkUrl?: string;
     variant?: string;
     postSlug?: string;
-    imagePosition?: 'left' | 'right' | 'full';
+    imagePosition?: 'left' | 'right' | 'top' | 'bottom' | 'full';
     items?: any[];
+    tabs?: any[];
+    plans?: any[];
+    screens?: SystemShowcaseItem[];
+    steps?: any[];
+    cards?: any[];
+    industries?: any[];
+    categories?: any[];
+    [key: string]: any;
   };
 }
 
@@ -284,10 +393,13 @@ export interface OrderSettings {
 
 export interface WebsiteConfig {
   appMode?: AppMode;
+  themePreset?: ThemePreset;
   logoStyle?: LogoStyle;
   navbarOrder?: string[];
   sections?: WebsiteSection[];
   orderSettings?: OrderSettings;
+  navbarAdvanced?: NavbarAdvancedConfig;
+  footerAdvanced?: FooterAdvancedConfig;
   footer?: {
     description?: string;
     address?: string;
