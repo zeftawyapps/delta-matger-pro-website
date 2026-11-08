@@ -4,15 +4,17 @@ import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { mockTestimonials } from "@/data/mockData";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./StoreComponents.module.css";
 
 interface TestimonialsProps {
   items?: any[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: any;
 }
 
-export default function Testimonials({ items, title, description }: TestimonialsProps) {
+export default function Testimonials({ items, title, description, config }: TestimonialsProps) {
   const { lang } = useApp();
   const [activeIndex, setActiveIndex] = useState(0);
   const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
@@ -36,12 +38,11 @@ export default function Testimonials({ items, title, description }: Testimonials
 
   return (
     <section className={`${styles.testimonialsSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
       <div className={`${styles.testimonialsBox} glassCard attractiveCard`}>
         <button onClick={prevSlide} className={styles.sliderArrow} aria-label="Previous Testimonial">
           {lang === "ar" ? "→" : "←"}

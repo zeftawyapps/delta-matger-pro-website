@@ -1,0 +1,205 @@
+.headerWrapper {
+  width: 100%;
+  display: flex;
+  margin-bottom: 1.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Alignments */
+.align_start {
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: start;
+}
+
+.align_center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.align_center .titleArea {
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.align_center .title {
+  text-align: center;
+  width: 100%;
+}
+
+.align_center .subtitle {
+  text-align: center;
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.align_split {
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.align_center .titleArea {
+  align-items: center;
+}
+
+.align_start .titleArea {
+  align-items: flex-start;
+}
+
+/* Badge */
+.headerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background-color: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  border: 1.5px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  margin-bottom: 0.45rem;
+  width: fit-content;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+/* Base Title */
+.title {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+/* Title Sizes */
+.size_sm {
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+}
+
+.size_md {
+  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.3rem);
+}
+
+.size_lg {
+  font-size: clamp(2rem, 1.6rem + 1.6vw, 2.9rem);
+}
+
+.size_xl {
+  font-size: clamp(2.4rem, 1.9rem + 2.4vw, 3.8rem);
+}
+
+/* Title Variants */
+.style_gradient {
+  background: linear-gradient(135deg, var(--fg) 25%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.style_solid {
+  color: var(--fg);
+  -webkit-text-fill-color: currentColor;
+}
+
+.style_badge_header {
+  color: var(--fg);
+  -webkit-text-fill-color: currentColor;
+}
+
+.style_glow {
+  color: var(--fg);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.style_accent_bar {
+  color: var(--fg);
+}
+
+/* Accent Decorative Bar */
+.accentBar {
+  width: 52px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary, #7850dc));
+  margin-top: 0.35rem;
+  margin-bottom: 0.25rem;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+.align_center .accentBar {
+  margin-inline: auto;
+}
+
+/* Flanked Lines Variant (── Title ──) */
+.titleFlankedWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.align_start .titleFlankedWrapper {
+  justify-content: flex-start;
+}
+
+.flankLine {
+  height: 2px;
+  flex: 0 1 60px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 70%, transparent));
+  border-radius: 2px;
+}
+
+.flankLineRight {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 70%, transparent), transparent);
+}
+
+/* Underlined Full Variant */
+.underlinedBar {
+  width: 100%;
+  max-width: 140px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), transparent);
+  margin-top: 0.35rem;
+  margin-bottom: 0.25rem;
+  border-radius: 2px;
+}
+
+.align_center .underlinedBar {
+  margin-inline: auto;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+/* Subtitle */
+.subtitle {
+  margin: 0;
+  font-size: clamp(0.92rem, 0.88rem + 0.2vw, 1.05rem);
+  line-height: 1.6;
+  opacity: 0.78;
+  max-width: 620px;
+}
+
+.actionWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+

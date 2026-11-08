@@ -4,15 +4,17 @@ import React from "react";
 import { useApp } from "@/context/AppContext";
 import { formatPrice } from "@/utils/currency";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./StoreComponents.module.css";
 
 interface TrustBadgesProps {
   items?: any[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: any;
 }
 
-export default function TrustBadges({ items, title, description }: TrustBadgesProps) {
+export default function TrustBadges({ items, title, description, config }: TrustBadgesProps) {
   const { lang, t, organizationPolicy } = useApp();
   const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
 
@@ -42,12 +44,11 @@ export default function TrustBadges({ items, title, description }: TrustBadgesPr
 
   return (
     <section className={`${styles.trustSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
       <div className={styles.trustGrid}>
         {displayItems.map((item, index) => {
           const titleStr = resolveLocalizedText(item.title, lang);

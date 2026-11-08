@@ -112,7 +112,7 @@
   aspect-ratio: 1;
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
 }
 
 .visualImg {
@@ -195,7 +195,7 @@
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--card-radius, var(--radius-md)) !important;
 }
 
 .catImgWrapper {
@@ -261,8 +261,42 @@
   }
 }
 
+@media (max-width: 640px) {
+  .productsGrid.mobileCarousel,
+  .featuresGrid.mobileCarousel,
+  .categoriesGrid.mobileCarousel {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 0.75rem !important;
+    padding-inline: 0.5rem !important;
+    gap: 1rem !important;
+  }
+  .productsGrid.mobileCarousel::-webkit-scrollbar,
+  .featuresGrid.mobileCarousel::-webkit-scrollbar,
+  .categoriesGrid.mobileCarousel::-webkit-scrollbar {
+    display: none !important;
+  }
+  .productsGrid.mobileCarousel > *,
+  .featuresGrid.mobileCarousel > *,
+  .categoriesGrid.mobileCarousel > * {
+    flex: 0 0 78% !important;
+    max-width: 78% !important;
+    scroll-snap-align: center !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .featuresGrid:not(.mobileCarousel) {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
 @media (max-width: 480px) {
-  .productsGrid {
+  .productsGrid:not(.mobileCarousel) {
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }
@@ -273,17 +307,17 @@
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md, 18px) !important;
+  border-radius: var(--card-radius, var(--radius-md, 18px)) !important;
   overflow: hidden;
-  box-shadow: 0 4px 20px -2px var(--shadow);
+  box-shadow: var(--card-shadow, 0 4px 20px -2px var(--shadow));
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
   height: 100%;
   position: relative;
 }
 
 .productCard:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 36px -6px var(--shadow), 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent);
+  transform: translateY(var(--card-hover-elevation, -6px));
+  box-shadow: var(--card-hover-shadow, var(--card-shadow, 0 16px 36px -6px var(--shadow)), 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent));
   border-color: color-mix(in srgb, var(--primary) 40%, transparent);
 }
 
@@ -520,7 +554,7 @@
 
 .offersBox {
   padding: 3rem 2rem;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
   background: radial-gradient(circle at top left, oklch(62% 0.16 320 / 0.05) 0%, var(--surface) 80%);
 }
 
@@ -606,7 +640,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 2.5rem 1.5rem;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
   gap: 1.5rem;
 }
 
@@ -720,7 +754,7 @@
 }
 
 .faqItem {
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--card-radius, var(--radius-md)) !important;
   overflow: hidden;
   transition: var(--transition-smooth);
 }
@@ -804,7 +838,7 @@
   text-align: center;
   gap: 1rem;
   padding: 1.5rem;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--card-radius, var(--radius-md)) !important;
 }
 
 .trustIcon {
@@ -833,9 +867,9 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .titleArea {
@@ -1140,17 +1174,18 @@
 
 .featureCard {
   padding: 2rem 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius, var(--radius-lg));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.75rem;
+  box-shadow: var(--card-shadow, none);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .featureCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--primary) 15%, transparent);
+  transform: translateY(var(--card-hover-elevation, -4px));
+  box-shadow: var(--card-hover-shadow, 0 12px 30px color-mix(in srgb, var(--primary) 15%, transparent));
 }
 
 .featureIcon {
@@ -1212,7 +1247,8 @@
 
 .tabContent {
   padding: 2rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
+  box-shadow: var(--card-shadow, none);
 }
 
 .tabContentText {
@@ -1258,7 +1294,8 @@
 
 /* Showcase */
 .showcaseImageWrapper {
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
+  box-shadow: var(--card-shadow, none);
   overflow: hidden;
   min-height: 320px;
   display: flex;
@@ -1323,16 +1360,18 @@
 
 .pricingCard {
   padding: 2rem 1.5rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
+  box-shadow: var(--card-shadow, none);
   display: flex;
   flex-direction: column;
   gap: 1rem;
   position: relative;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .pricingCard:hover {
-  transform: translateY(-4px);
+  transform: translateY(var(--card-hover-elevation, -4px));
+  box-shadow: var(--card-hover-shadow, var(--card-shadow, 0 8px 30px color-mix(in srgb, var(--primary) 20%, transparent)));
 }
 
 .pricingCardPopular {
@@ -1423,7 +1462,8 @@
 .contactInfo,
 .contactForm {
   padding: 2rem;
-  border-radius: var(--radius-lg);
+  border-radius: var(--card-radius, var(--radius-lg)) !important;
+  box-shadow: var(--card-shadow, none);
   display: flex;
   flex-direction: column;
   gap: 1rem;

@@ -42,6 +42,7 @@ import UrgencyOfferStrip from "@/components/sections/UrgencyOfferStrip";
 import EcosystemIntegrations from "@/components/sections/EcosystemIntegrations";
 import PricingSaasSlider from "@/components/sections/PricingSaasSlider";
 import HighImpactCtaBanner from "@/components/sections/HighImpactCtaBanner";
+import SelectedArticles from "@/components/sections/SelectedArticles";
 
 // Hybrid layouts
 import Link from "next/link";
@@ -53,7 +54,12 @@ import {
   getSectionHeaderTexts,
   resolveLocalizedText,
   buildSectionBackgroundProps,
+  buildCardStyleProps,
+  getSectionWidthStyle,
+  getSectionMargins,
 } from "@/utils/sectionHelpers";
+import ScrollReveal from "@/components/common/ScrollReveal";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./Home.module.css";
 
 function HomepageContent() {
@@ -161,8 +167,12 @@ function HomepageContent() {
           { id: "blog_posts", type: "blog_posts", isActive: true },
         ];
 
-  const websiteConfig = config?.website || { sections: defaultSections };
-  const activeSections = (websiteConfig.sections || defaultSections).filter((s) => s.isActive);
+  const websiteConfig = config?.website;
+  const configuredSections =
+    websiteConfig?.sections !== undefined
+      ? websiteConfig.sections
+      : defaultSections;
+  const activeSections = (configuredSections || []).filter((s) => s.isActive);
 
   // Filters for Blog Posts
   const filteredPosts = posts.filter((post) => {
@@ -213,6 +223,7 @@ function HomepageContent() {
   // RENDER SECTIONS CORRESPONDING TO CONFIG
   const renderSection = (section: any) => {
     const sType = (section.type || "").toLowerCase().trim();
+    const sectionMergedConfig = { ...(section as any), ...section.config };
     const { titleText, descText, hasHeader } = getSectionHeaderTexts(section, lang);
 
     const isBoxed = section.config?.boxedLayout === true;
@@ -246,14 +257,41 @@ function HomepageContent() {
         content
       );
 
-      if (!bgProps.hasActiveBackground) return inner;
-
       const orbPosClass = `orbPos-${rawBgConfig?.glowPosition || "center"}`;
-      return (
+      // Section Spacing, Padding & Rhythm Engine
+      const rawPaddingY = section.config?.paddingY ?? (section as any).paddingY;
+      const rawPaddingTop = section.config?.paddingTop ?? (section as any).paddingTop ?? rawPaddingY;
+      const rawPaddingBottom = section.config?.paddingBottom ?? (section as any).paddingBottom ?? rawPaddingY;
+
+      const rawPaddingX = section.config?.paddingX ?? section.config?.paddingHorizontal ?? (section as any).paddingX;
+      const rawPaddingLeft = section.config?.paddingLeft ?? (section as any).paddingLeft ?? rawPaddingX;
+      const rawPaddingRight = section.config?.paddingRight ?? (section as any).paddingRight ?? rawPaddingX;
+
+      const paddingStyle: React.CSSProperties = {
+        ...(rawPaddingTop !== undefined && rawPaddingTop !== null
+          ? { paddingTop: typeof rawPaddingTop === "number" ? `${rawPaddingTop}px` : rawPaddingTop }
+          : {}),
+        ...(rawPaddingBottom !== undefined && rawPaddingBottom !== null
+          ? { paddingBottom: typeof rawPaddingBottom === "number" ? `${rawPaddingBottom}px` : rawPaddingBottom }
+          : {}),
+        ...(rawPaddingLeft !== undefined && rawPaddingLeft !== null
+          ? { paddingLeft: typeof rawPaddingLeft === "number" ? `${rawPaddingLeft}px` : rawPaddingLeft }
+          : {}),
+        ...(rawPaddingRight !== undefined && rawPaddingRight !== null
+          ? { paddingRight: typeof rawPaddingRight === "number" ? `${rawPaddingRight}px` : rawPaddingRight }
+          : {}),
+      };
+
+      const renderedContent = !bgProps.hasActiveBackground ? (
+        inner
+      ) : (
         <div
           key={`rhythm-${section.id}`}
           className={`sectionRhythmWrapper ${bgProps.className}`}
-          style={bgProps.style}
+          style={{
+            ...bgProps.style,
+            ...paddingStyle,
+          }}
         >
           {bgProps.dividerTop === "glow_line" && (
             <div className="sectionDividerGlowLine" style={bgProps.dividerStyle} />
@@ -272,6 +310,57 @@ function HomepageContent() {
             <div className="sectionDividerGradientFade" />
           )}
         </div>
+      );
+
+      // Section Width, Sizing & 4-Directional Margins Engine (Client Frontend Spec)
+      const widthStyle = getSectionWidthStyle(section.config);
+      const margins = getSectionMargins(section.config);
+
+      const hasExplicitXMargin =
+        section.config?.marginLeft !== undefined ||
+        section.config?.marginRight !== undefined ||
+        section.config?.marginX !== undefined;
+
+      const finalLeft = bgProps.hasActiveBackground
+        ? undefined
+        : hasExplicitXMargin
+        ? margins.marginLeft
+        : (widthStyle.maxWidth !== "100%" ? "auto" : margins.marginLeft);
+
+      const finalRight = bgProps.hasActiveBackground
+        ? undefined
+        : hasExplicitXMargin
+        ? margins.marginRight
+        : (widthStyle.maxWidth !== "100%" ? "auto" : margins.marginRight);
+
+      const finalPaddingLeft = paddingStyle.paddingLeft ?? (widthStyle.maxWidth !== "100%" && !hasExplicitXMargin ? margins.marginLeft : undefined);
+      const finalPaddingRight = paddingStyle.paddingRight ?? (widthStyle.maxWidth !== "100%" && !hasExplicitXMargin ? margins.marginRight : undefined);
+
+      const animConfig = section.config?.animation || (section as any).animation;
+      const cardStyleVars = buildCardStyleProps(section.config?.cardStyle || section.config);
+      return (
+        <ScrollReveal
+          key={`scroll-${section.id}`}
+          animation={animConfig}
+          style={{
+            alignSelf: "stretch",
+            width: widthStyle.width,
+            maxWidth: widthStyle.maxWidth,
+            boxSizing: "border-box",
+            marginTop: margins.marginTop,
+            marginBottom: margins.marginBottom,
+            marginLeft: finalLeft,
+            marginRight: finalRight,
+            ...(!bgProps.hasActiveBackground ? {
+              ...paddingStyle,
+              ...(finalPaddingLeft ? { paddingLeft: finalPaddingLeft } : {}),
+              ...(finalPaddingRight ? { paddingRight: finalPaddingRight } : {}),
+            } : {}),
+            ...(cardStyleVars as any),
+          }}
+        >
+          {renderedContent}
+        </ScrollReveal>
       );
     };
 
@@ -342,14 +431,11 @@ function HomepageContent() {
       if (appMode === "blog") {
         return wrapInLayout(
           <div key={section.id} className={styles.filterWrapper}>
-            {hasHeader && (
-              <div className={styles.sectionHeader}>
-                <div className={styles.titleArea}>
-                  {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-                  {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-                </div>
-              </div>
-            )}
+            <SectionHeader
+              title={titleText}
+              subtitle={descText}
+              config={sectionMergedConfig}
+            />
             <CategoryPills
               activeCategory={activeBlogCategory}
               onSelectCategory={handleSelectBlogCategory}
@@ -364,6 +450,7 @@ function HomepageContent() {
             onSelectCategory={handleSelectStoreCategory}
             title={titleText}
             description={descText}
+            config={sectionMergedConfig}
             variant={section.config?.variant}
           />
         );
@@ -389,18 +476,19 @@ function HomepageContent() {
 
       return wrapInLayout(
         <div key={section.id} id="store-sec" className={styles.storeSectionBlock}>
-          {hasHeader && (
-            <div className={styles.sectionHeader}>
-              <div className={styles.titleArea}>
-                {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-              </div>
-              <Link href="/store" className={styles.viewAllBtn}>
-                {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
-              </Link>
-            </div>
-          )}
-          <ProductGrid products={list} columns={columns} />
+          <SectionHeader
+            title={titleText}
+            subtitle={descText}
+            config={sectionMergedConfig}
+            actionButton={
+              section.config?.showViewAll || section.config?.showMoreButton ? (
+                <Link href="/store" className={styles.viewAllBtn}>
+                  {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
+                </Link>
+              ) : undefined
+            }
+          />
+          <ProductGrid products={list} columns={columns} config={sectionMergedConfig} />
         </div>
       );
     }
@@ -449,21 +537,45 @@ function HomepageContent() {
 
       return wrapInLayout(
         <div key={section.id} id="blog-sec" className={styles.blogSectionBlock}>
-          {hasHeader && (
-            <div className={styles.sectionHeader}>
-              <div className={styles.titleArea}>
-                {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-              </div>
-              <Link href="/blog" className={styles.viewAllBtn}>
-                {lang === "ar" ? "عرض الكل" : "View All"} {lang === "ar" ? "←" : "→"}
-              </Link>
-            </div>
+          <SectionHeader
+            title={titleText}
+            subtitle={descText}
+            config={sectionMergedConfig}
+            actionButton={
+              section.config?.showViewAll || section.config?.showMoreButton ? (
+                <Link
+                  href={
+                    section.config?.buttonLink ||
+                    (section.config?.blogCategoryId || section.config?.category
+                      ? `/blog?category=${section.config.blogCategoryId || section.config.category}`
+                      : "/blog")
+                  }
+                  className={styles.viewAllBtn}
+                >
+                  {section.config?.buttonText
+                    ? resolveLocalizedText(section.config.buttonText, lang)
+                    : lang === "ar"
+                    ? "عرض الكل"
+                    : "View All"}{" "}
+                  {lang === "ar" ? "←" : "→"}
+                </Link>
+              ) : undefined
+            }
+          />
+          {section.displayMode === "featured" ? (
+            !isSearching && featured ? <FeaturedPost post={featured} /> : null
+          ) : (
+            <>
+              {!isSearching && section.config?.showFeatured && featured && !isMostRead && (
+                <FeaturedPost post={featured} />
+              )}
+              <PostGrid
+                posts={list}
+                displayMode={section.displayMode}
+                config={sectionMergedConfig}
+              />
+            </>
           )}
-          {!isSearching && featured && !isMostRead && (!section.displayMode || section.displayMode === "grid") && (
-            <FeaturedPost post={featured} />
-          )}
-          <PostGrid posts={list} displayMode={section.displayMode} />
         </div>
       );
     }
@@ -567,19 +679,34 @@ function HomepageContent() {
 
     // 7. ABOUT COMPANY / SINGLE POST (Supports all appModes + inline content or postSlug)
     if (sType === "about_company") {
-      const slug = section.config?.postSlug;
-      const post = slug ? posts.find((p) => p.slug === slug) : undefined;
+      const slug = (
+        section.config?.postSlug ||
+        section.config?.postId ||
+        section.config?.blogPostId ||
+        (section.config?.content && typeof section.config.content === "string" && !section.config.content.includes("<") && !section.config.content.includes(" ") ? section.config.content : "")
+      )?.trim();
+
+      const post = slug
+        ? posts.find(
+            (p) =>
+              (p.slug && p.slug.trim().toLowerCase() === slug.toLowerCase()) ||
+              p.id === slug ||
+              (p as any).blogPostId === slug ||
+              (p as any)._id === slug ||
+              (p as any)._id?.$oid === slug
+          )
+        : undefined;
 
       const rawTitle = post
         ? typeof post.title === "string"
           ? post.title
-          : post.title?.[lang as any] || post.title?.ar || ""
+          : post.title?.[lang as any] || post.title?.ar || post.title?.en || ""
         : "";
       const postTitleStr = stripHtml(rawTitle);
       const contentStr = post
         ? typeof post.content === "string"
           ? post.content
-          : post.content?.[lang as any] || post.content?.ar || ""
+          : post.content?.[lang as any] || post.content?.ar || post.content?.en || ""
         : resolveLocalizedText(section.config?.content || section.config?.text, lang);
 
       if (!contentStr && !post) return null;
@@ -594,14 +721,11 @@ function HomepageContent() {
 
       return wrapInLayout(
         <section key={section.id} className={styles.aboutCompanySectionBlock}>
-          {(finalHeaderTitle || descText) && (
-            <div className={styles.sectionHeader}>
-              <div className={styles.titleArea}>
-                {finalHeaderTitle && <h2 className={styles.sectionTitle}>{finalHeaderTitle}</h2>}
-                {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-              </div>
-            </div>
-          )}
+          <SectionHeader
+            title={finalHeaderTitle}
+            subtitle={descText}
+            config={section.config}
+          />
           <div className={contentClass}>
             {imgUrl && (
               <div className={styles.aboutCompanyImageWrapper}>
@@ -615,11 +739,13 @@ function HomepageContent() {
                   dangerouslySetInnerHTML={{ __html: contentStr }}
                 />
               ) : (
-                contentStr.split("\n\n").map((paragraph, idx) => (
-                  <p key={idx} className={styles.aboutParagraph}>
-                    {paragraph}
-                  </p>
-                ))
+                <div className={styles.aboutPlainContent}>
+                  {contentStr.split(/\r?\n\s*\r?\n/).map((paragraph, idx) => (
+                    <p key={idx} className={styles.aboutParagraph}>
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -659,6 +785,7 @@ function HomepageContent() {
           items={section.config?.items}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -670,6 +797,7 @@ function HomepageContent() {
           key={section.id}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -682,6 +810,7 @@ function HomepageContent() {
           items={section.config?.items}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -694,6 +823,7 @@ function HomepageContent() {
           tabs={section.config?.tabs}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -706,6 +836,7 @@ function HomepageContent() {
           tabs={section.config?.tabs}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
           displayMode={section.displayMode}
         />
       );
@@ -719,6 +850,7 @@ function HomepageContent() {
           plans={section.config?.plans}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
           displayMode={section.displayMode}
         />
       );
@@ -729,9 +861,24 @@ function HomepageContent() {
       return wrapInLayout(
         <ContactUs
           key={section.id}
-          config={section.config}
+          config={sectionMergedConfig}
           title={titleText}
           description={descText}
+        />
+      );
+    }
+
+    // =========================================================================
+    // SELECTED ARTICLES (selected_articles)
+    // =========================================================================
+    if (sType === "selected_articles" || sType === "selectedarticles" || sType === "featured_articles") {
+      return wrapInLayout(
+        <SelectedArticles
+          key={section.id}
+          title={titleText}
+          description={descText}
+          displayMode={section.displayMode}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -744,9 +891,9 @@ function HomepageContent() {
       return wrapInLayout(
         <HeroSaasInteractive
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -755,9 +902,9 @@ function HomepageContent() {
       return wrapInLayout(
         <QuickTrustStrip
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -766,9 +913,9 @@ function HomepageContent() {
       return wrapInLayout(
         <PainPointAgitation
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -777,9 +924,9 @@ function HomepageContent() {
       return wrapInLayout(
         <ComparisonMatrix
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -788,9 +935,9 @@ function HomepageContent() {
       return wrapInLayout(
         <SystemScreensShowcase
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -799,9 +946,9 @@ function HomepageContent() {
       return wrapInLayout(
         <ProcessStepsInteractive
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -810,9 +957,9 @@ function HomepageContent() {
       return wrapInLayout(
         <VideoExplainerShowcase
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -821,9 +968,9 @@ function HomepageContent() {
       return wrapInLayout(
         <TargetAudienceIndustries
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -832,9 +979,9 @@ function HomepageContent() {
       return wrapInLayout(
         <UrgencyOfferStrip
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -843,9 +990,9 @@ function HomepageContent() {
       return wrapInLayout(
         <EcosystemIntegrations
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -854,9 +1001,9 @@ function HomepageContent() {
       return wrapInLayout(
         <PricingSaasSlider
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }
@@ -865,9 +1012,9 @@ function HomepageContent() {
       return wrapInLayout(
         <HighImpactCtaBanner
           key={section.id}
-          title={section.title}
-          description={section.description}
-          config={section.config}
+          title={titleText}
+          description={descText}
+          config={sectionMergedConfig}
         />
       );
     }

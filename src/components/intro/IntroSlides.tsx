@@ -432,6 +432,26 @@ export default function IntroSlides({ config, displayMode, title, description }:
     return s;
   }
 
+  function getHeroSecondaryButtonStyle(c: { buttonShape?: string }): CSSProperties {
+    const s: CSSProperties = {};
+
+    if (c.buttonShape === "pill") {
+      s.borderRadius = "9999px";
+    } else if (c.buttonShape === "square") {
+      s.borderRadius = "0px";
+    } else if (c.buttonShape === "soft") {
+      s.borderRadius = "16px";
+    } else if (c.buttonShape === "rounded_rect") {
+      s.borderRadius = "var(--radius-sm, 8px)";
+    }
+
+    const color = merged.textColor || "inherit";
+    s.color = color;
+    s.borderColor = color !== "inherit" ? `${color}40` : "rgba(128, 128, 128, 0.35)";
+
+    return s;
+  }
+
   // ---- Display style variants ----
   let inner: React.ReactNode;
 
@@ -474,20 +494,31 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 )}
               </div>
             )}
-            {chrome.showButton && chrome.buttonText && (
+            {(chrome.showButton || chrome.showSecondaryButton) && (
               <div className={styles.heroBtns}>
-                <Link
-                  href={chrome.buttonLink}
-                  className="glowButton"
-                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
-                >
-                  <span>{chrome.buttonText}</span>
-                  {chrome.showButtonArrow && (
-                    <span className={styles.heroBtnArrow} aria-hidden>
-                      {lang === "ar" ? "←" : "→"}
-                    </span>
-                  )}
-                </Link>
+                {chrome.showButton && chrome.buttonText && (
+                  <Link
+                    href={chrome.buttonLink}
+                    className="glowButton"
+                    style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
+                  >
+                    <span>{chrome.buttonText}</span>
+                    {chrome.showButtonArrow && (
+                      <span className={styles.heroBtnArrow} aria-hidden>
+                        {lang === "ar" ? "←" : "→"}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {chrome.showSecondaryButton && chrome.secondaryButtonText && (
+                  <Link
+                    href={chrome.secondaryButtonLink || "#"}
+                    className={styles.secondaryHeroBtn}
+                    style={getHeroSecondaryButtonStyle({ buttonShape: chrome.buttonShape })}
+                  >
+                    <span>{chrome.secondaryButtonText}</span>
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -499,62 +530,126 @@ export default function IntroSlides({ config, displayMode, title, description }:
     case "full_split": {
       const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
       const visualImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
+      const hasHeroImage = Boolean(chrome.showImage && visualImg);
 
       inner = (
-        <div className={styles.splitWrapper}>
+        <div className={hasHeroImage ? styles.splitWrapper : styles.splitWrapperCentered}>
           {chrome.showGlow && (
             <div
               className={`${styles.classicHeroGlow} ${appMode === "store" ? styles.classicHeroGlowStore : ""}`}
               aria-hidden
             />
           )}
-          <div className={`${styles.splitText} ${alignClass}`}>
-            {chrome.showBadge && chrome.badge && (
-              <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
-                {chrome.badge}
-              </span>
-            )}
-            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
-            <p style={descStyle}>{slide.description}</p>
-            {chrome.showPrice && chrome.price != null && (
-              <div className={styles.classicPriceRow}>
-                {chrome.originalPrice != null && (
-                  <span className={styles.classicOriginalPrice}>
-                    {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
+          {hasHeroImage ? (
+            <>
+              <div className={`${styles.splitText} ${alignClass}`}>
+                {chrome.showBadge && chrome.badge && (
+                  <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
+                    {chrome.badge}
                   </span>
                 )}
-                <span className={styles.classicActivePrice}>
-                  {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
-                </span>
-                {chrome.discountLabel && (
-                  <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
+                <p style={descStyle}>{slide.description}</p>
+                {chrome.showPrice && chrome.price != null && (
+                  <div className={styles.classicPriceRow}>
+                    {chrome.originalPrice != null && (
+                      <span className={styles.classicOriginalPrice}>
+                        {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
+                      </span>
+                    )}
+                    <span className={styles.classicActivePrice}>
+                      {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
+                    </span>
+                    {chrome.discountLabel && (
+                      <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                    )}
+                  </div>
+                )}
+                {(chrome.showButton || chrome.showSecondaryButton) && (
+                  <div className={styles.heroBtns}>
+                    {chrome.showButton && chrome.buttonText && (
+                      <Link
+                        href={chrome.buttonLink}
+                        className="glowButton"
+                        style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
+                      >
+                        <span>{chrome.buttonText}</span>
+                        {chrome.showButtonArrow && (
+                          <span className={styles.heroBtnArrow} aria-hidden>
+                            {lang === "ar" ? "←" : "→"}
+                          </span>
+                        )}
+                      </Link>
+                    )}
+                    {chrome.showSecondaryButton && chrome.secondaryButtonText && (
+                      <Link
+                        href={chrome.secondaryButtonLink || "#"}
+                        className={styles.secondaryHeroBtn}
+                        style={getHeroSecondaryButtonStyle({ buttonShape: chrome.buttonShape })}
+                      >
+                        <span>{chrome.secondaryButtonText}</span>
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-            {chrome.showButton && chrome.buttonText && (
-              <div className={styles.heroBtns}>
-                <Link
-                  href={chrome.buttonLink}
-                  className="glowButton"
-                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
-                >
-                  <span>{chrome.buttonText}</span>
-                  {chrome.showButtonArrow && (
-                    <span className={styles.heroBtnArrow} aria-hidden>
-                      {lang === "ar" ? "←" : "→"}
+              <div className={styles.splitVisual}>
+                <img src={visualImg} alt={slide.title} />
+              </div>
+            </>
+          ) : (
+            <div className={styles.centeredContent}>
+              {chrome.showBadge && chrome.badge && (
+                <span className={`${styles.classicBadge} ${appMode === "store" ? styles.classicBadgeStore : ""}`} style={getHeroBadgeStyle(chrome)}>
+                  {chrome.badge}
+                </span>
+              )}
+              <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
+              <p style={descStyle}>{slide.description}</p>
+              {chrome.showPrice && chrome.price != null && (
+                <div className={styles.classicPriceRow}>
+                  {chrome.originalPrice != null && (
+                    <span className={styles.classicOriginalPrice}>
+                      {formatPrice(chrome.originalPrice, organizationPolicy?.logistics?.currency, lang)}
                     </span>
                   )}
-                </Link>
-              </div>
-            )}
-          </div>
-          <div className={styles.splitVisual}>
-            {visualImg ? (
-              <img src={visualImg} alt={slide.title} />
-            ) : (
-              <div className={styles.splitPlaceholder} aria-hidden />
-            )}
-          </div>
+                  <span className={styles.classicActivePrice}>
+                    {formatPrice(chrome.price, organizationPolicy?.logistics?.currency, lang)}
+                  </span>
+                  {chrome.discountLabel && (
+                    <span className={styles.classicDiscountBadge}>{chrome.discountLabel}</span>
+                  )}
+                </div>
+              )}
+              {(chrome.showButton || chrome.showSecondaryButton) && (
+                <div className={styles.heroBtns} style={{ justifyContent: "center" }}>
+                  {chrome.showButton && chrome.buttonText && (
+                    <Link
+                      href={chrome.buttonLink}
+                      className="glowButton"
+                      style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
+                    >
+                      <span>{chrome.buttonText}</span>
+                      {chrome.showButtonArrow && (
+                        <span className={styles.heroBtnArrow} aria-hidden>
+                          {lang === "ar" ? "←" : "→"}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+                  {chrome.showSecondaryButton && chrome.secondaryButtonText && (
+                    <Link
+                      href={chrome.secondaryButtonLink || "#"}
+                      className={styles.secondaryHeroBtn}
+                      style={getHeroSecondaryButtonStyle({ buttonShape: chrome.buttonShape })}
+                    >
+                      <span>{chrome.secondaryButtonText}</span>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       );
       break;
@@ -677,20 +772,31 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 )}
               </div>
             )}
-            {chrome.showButton && chrome.buttonText && (
+            {(chrome.showButton || chrome.showSecondaryButton) && (
               <div className={styles.heroBtns}>
-                <Link
-                  href={chrome.buttonLink}
-                  className="glowButton"
-                  style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
-                >
-                  <span>{chrome.buttonText}</span>
-                  {chrome.showButtonArrow && (
-                    <span className={styles.heroBtnArrow} aria-hidden>
-                      {lang === "ar" ? "←" : "→"}
-                    </span>
-                  )}
-                </Link>
+                {chrome.showButton && chrome.buttonText && (
+                  <Link
+                    href={chrome.buttonLink}
+                    className="glowButton"
+                    style={getHeroButtonStyle({ ...chrome, buttonBackgroundType: merged.buttonBackgroundType })}
+                  >
+                    <span>{chrome.buttonText}</span>
+                    {chrome.showButtonArrow && (
+                      <span className={styles.heroBtnArrow} aria-hidden>
+                        {lang === "ar" ? "←" : "→"}
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {chrome.showSecondaryButton && chrome.secondaryButtonText && (
+                  <Link
+                    href={chrome.secondaryButtonLink || "#"}
+                    className={styles.secondaryHeroBtn}
+                    style={getHeroSecondaryButtonStyle({ buttonShape: chrome.buttonShape })}
+                  >
+                    <span>{chrome.secondaryButtonText}</span>
+                  </Link>
+                )}
               </div>
             )}
           </div>

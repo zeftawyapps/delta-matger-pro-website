@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
@@ -86,6 +86,47 @@ export default function Navbar() {
   const [toolsOpen, setToolsOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileBlogExpanded, setMobileBlogExpanded] = useState(false);
+  const [mobileStoreExpanded, setMobileStoreExpanded] = useState(false);
+  const [desktopDropdownOpen, setDesktopDropdownOpen] = useState<string | null>(null);
+
+  const headerRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure exact rendered navbar top-bar height (including safe-area-inset-top)
+  // and dynamically update --navbar-height so content beneath is never obscured
+  useEffect(() => {
+    const updateNavbarHeight = () => {
+      if (containerRef.current && headerRef.current) {
+        const computedStyle = window.getComputedStyle(headerRef.current);
+        const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+        const containerHeight = containerRef.current.getBoundingClientRect().height;
+        const totalHeight = Math.round(containerHeight + paddingTop);
+        if (totalHeight > 0) {
+          document.documentElement.style.setProperty('--navbar-height', `${totalHeight}px`);
+        }
+      }
+    };
+
+    updateNavbarHeight();
+    window.addEventListener('resize', updateNavbarHeight);
+    window.addEventListener('orientationchange', updateNavbarHeight);
+    return () => {
+      window.removeEventListener('resize', updateNavbarHeight);
+      window.removeEventListener('orientationchange', updateNavbarHeight);
+    };
+  }, []);
+
+  // Close desktop dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (desktopDropdownOpen && headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setDesktopDropdownOpen(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [desktopDropdownOpen]);
 
   // Checkout form states
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -462,6 +503,18 @@ export default function Navbar() {
     setToolsOpen(false);
   }, [pathname]);
 
+  // Lock body scroll when mobile sidebar drawer or cart is open
+  useEffect(() => {
+    if (sidebarOpen || cartOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen, cartOpen]);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
@@ -490,6 +543,9 @@ export default function Navbar() {
 
   const navAdv = config?.website?.navbarAdvanced;
   const excessMode = config?.website?.excessLinksMode ?? 'dropdown';
+  const isDropdownMode = excessMode === 'dropdown';
+  const showBlogCats = config?.website?.showBlogCategoriesInNavbar !== false;
+  const showStoreCats = config?.website?.showStoreCategoriesInNavbar !== false;
   const linksStyle = config?.website?.navbarLinksStyle ?? 'classic';
   const navbarLayout =
     navAdv?.layoutStyle === 'floating_pill'
@@ -502,13 +558,22 @@ export default function Navbar() {
       ? false
       : config?.website?.navbarSticky ?? true;
 
-  const customNavbarBg = config?.website?.customNavbarBg || config?.website?.navbarBg;
-  const customNavbarTextColor = config?.website?.customNavbarTextColor || config?.website?.navbarTextColor;
+  const isCustomTheme = navbarTheme === 'custom';
+  const customNavbarBg = isCustomTheme ? (config?.website?.customNavbarBg || config?.website?.navbarBg) : undefined;
+  const customNavbarTextColor = isCustomTheme ? (config?.website?.customNavbarTextColor || config?.website?.navbarTextColor) : undefined;
+
+  // Toggle whether to display brand title next to logo
+  const showNavbarTitle =
+    config?.website?.navbarShowTitle ??
+    config?.website?.showTitle ??
+    true;
 
   // Logo styling driven by config.website.logoStyle ("solid" | "gradient") or custom text color
   const logoStyle = config?.website?.logoStyle ?? "solid";
   const logoTextStyle: React.CSSProperties =
-    customNavbarTextColor
+    navbarTheme === "accent"
+      ? { color: "#ffffff", WebkitTextFillColor: "#ffffff" }
+      : customNavbarTextColor
       ? { color: customNavbarTextColor, WebkitTextFillColor: customNavbarTextColor }
       : logoStyle === "gradient"
       ? {
@@ -534,9 +599,11 @@ export default function Navbar() {
       ) : (
         <span className={styles.logoIcon}>◆</span>
       )}
-      <span className={styles.logoText} style={logoTextStyle}>
-        {appTitle}
-      </span>
+      {showNavbarTitle && (
+        <span className={styles.logoText} style={logoTextStyle}>
+          {appTitle}
+        </span>
+      )}
     </Link>
   );
 
@@ -573,19 +640,38 @@ export default function Navbar() {
         {t.home}
       </Link>
 
-      {/* 1. Hybrid Mode: Show Home, Blog dropdown, and Store dropdown. No Hybrid page link! */}
+      {/* 1. Hybrid Mode: Show Home, Blog dropdown, and Store dropdown */}
       {appMode === "hybrid" && (
         <>
           <div className={styles.dropdownContainer}>
-            <Link href="/blog" className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`} style={linkCustomStyle}>
-              {t.blog} {config?.website?.showBlogCategoriesInNavbar && categories.length > 0 && "▾"}
-            </Link>
-            {config?.website?.showBlogCategoriesInNavbar && categories.length > 0 && (
-              <div className={styles.dropdownMenu} style={dropdownMenuStyle}>
+            <div style={{ display: "inline-flex", alignItems: "center" }}>
+              <Link href="/blog" className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`} style={linkCustomStyle}>
+                {t.blog}
+              </Link>
+              {showBlogCats && categories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
+                  }}
+                  className={styles.dropdownToggle}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                  aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
+                >
+                  ▾
+                </button>
+              )}
+            </div>
+            {showBlogCats && categories.length > 0 && (
+              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  {lang === "ar" ? "كل المقالات" : "All Posts"}
+                </Link>
                 {categories.map((cat) => {
                   const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
                   return (
-                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle}>
+                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
                       {nameStr}
                     </Link>
                   );
@@ -595,15 +681,34 @@ export default function Navbar() {
           </div>
 
           <div className={styles.dropdownContainer}>
-            <Link href="/store" className={`${styles.navLink} ${pathname.startsWith("/store") ? styles.active : ""}`} style={linkCustomStyle}>
-              {t.store} {config?.website?.showStoreCategoriesInNavbar && productCategories.length > 0 && "▾"}
-            </Link>
-            {config?.website?.showStoreCategoriesInNavbar && productCategories.length > 0 && (
-              <div className={styles.dropdownMenu} style={dropdownMenuStyle}>
+            <div style={{ display: "inline-flex", alignItems: "center" }}>
+              <Link href="/store" className={`${styles.navLink} ${pathname.startsWith("/store") ? styles.active : ""}`} style={linkCustomStyle}>
+                {t.store}
+              </Link>
+              {showStoreCats && productCategories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDesktopDropdownOpen(desktopDropdownOpen === "store" ? null : "store");
+                  }}
+                  className={styles.dropdownToggle}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                  aria-label={lang === "ar" ? "أقسام المتجر" : "Store categories"}
+                >
+                  ▾
+                </button>
+              )}
+            </div>
+            {showStoreCats && productCategories.length > 0 && (
+              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  {lang === "ar" ? "كل المنتجات" : "All Products"}
+                </Link>
                 {productCategories.map((cat) => {
                   const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
                   return (
-                    <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle}>
+                    <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
                       {nameStr}
                     </Link>
                   );
@@ -614,7 +719,7 @@ export default function Navbar() {
         </>
       )}
 
-      {/* 2. Store-only Mode: Show Home, 'Our Products' link, and 'Categories' dropdown. No Blog! */}
+      {/* 2. Store-only Mode: Show Home, 'Our Products' link, and 'Categories' dropdown */}
       {appMode === "store" && (
         <>
           <Link href="/store" className={`${styles.navLink} ${pathname === "/store" ? styles.active : ""}`} style={linkCustomStyle}>
@@ -622,15 +727,26 @@ export default function Navbar() {
           </Link>
 
           <div className={styles.dropdownContainer}>
-            <span className={`${styles.navLink} ${pathname.includes("category") ? styles.active : ""}`} style={{ cursor: "pointer", ...linkCustomStyle }}>
-              {lang === "ar" ? "الأصناف" : "Categories"} {productCategories.length > 0 && "▾"}
-            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDesktopDropdownOpen(desktopDropdownOpen === "store_cats" ? null : "store_cats");
+              }}
+              className={`${styles.navLink} ${styles.dropdownToggle} ${pathname.includes("category") ? styles.active : ""}`}
+              style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", ...linkCustomStyle }}
+            >
+              {lang === "ar" ? "الأقسام" : "Categories"} {productCategories.length > 0 && "▾"}
+            </button>
             {productCategories.length > 0 && (
-              <div className={styles.dropdownMenu} style={dropdownMenuStyle}>
+              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store_cats" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  {lang === "ar" ? "كل المنتجات" : "All Products"}
+                </Link>
                 {productCategories.map((cat) => {
                   const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
                   return (
-                    <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle}>
+                    <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
                       {nameStr}
                     </Link>
                   );
@@ -641,16 +757,80 @@ export default function Navbar() {
         </>
       )}
 
-      {/* 3. Blog-only Mode: Show Home, and a 'Blog Categories' sidebar toggle. No Store! */}
+      {/* 3. Blog-only Mode: Show Blog link & Categories dropdown */}
       {appMode === "blog" && (
-        <span
-          onClick={() => setSidebarOpen(true)}
-          className={styles.navLink}
-          style={{ cursor: "pointer", ...linkCustomStyle }}
-          role="button"
-        >
-          {lang === "ar" ? "أقسام المدونة ☰" : "Blog Categories ☰"}
-        </span>
+        <>
+          <div className={styles.dropdownContainer}>
+            <div style={{ display: "inline-flex", alignItems: "center" }}>
+              <Link
+                href="/blog"
+                className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`}
+                style={linkCustomStyle}
+              >
+                {t.blog}
+              </Link>
+              {categories.length > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
+                  }}
+                  className={styles.dropdownToggle}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                  aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
+                >
+                  ▾
+                </button>
+              )}
+            </div>
+            {categories.length > 0 && (
+              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  {lang === "ar" ? "كل المقالات" : "All Posts"}
+                </Link>
+                {categories.map((cat) => {
+                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                  return (
+                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                      {nameStr}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Dedicated "الأقسام" (Categories) dropdown in desktop navbar */}
+          {categories.length > 0 && (
+            <div className={styles.dropdownContainer}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDesktopDropdownOpen(desktopDropdownOpen === "blog_cats" ? null : "blog_cats");
+                }}
+                className={`${styles.navLink} ${styles.dropdownToggle}`}
+                style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", ...linkCustomStyle }}
+              >
+                {lang === "ar" ? "الأقسام ▾" : "Categories ▾"}
+              </button>
+              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog_cats" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  {lang === "ar" ? "كل المقالات" : "All Posts"}
+                </Link>
+                {categories.map((cat) => {
+                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                  return (
+                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                      {nameStr}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {visiblePages.map((page) => {
@@ -669,10 +849,18 @@ export default function Navbar() {
 
       {excessPages.length > 0 && excessMode === 'dropdown' && (
         <div className={styles.dropdownContainer}>
-          <button className={`${styles.navLink} ${styles.dropdownToggle}`} style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: 0, ...linkCustomStyle }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDesktopDropdownOpen(desktopDropdownOpen === "excess" ? null : "excess");
+            }}
+            className={`${styles.navLink} ${styles.dropdownToggle}`}
+            style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: 0, ...linkCustomStyle }}
+          >
             {lang === "ar" ? "المزيد ▾" : "More ▾"}
           </button>
-          <div className={styles.dropdownMenu} style={dropdownMenuStyle}>
+          <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "excess" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
             {excessPages.map((page) => {
               const title = typeof page.title === "string" ? page.title : page.title?.[lang] || page.title?.ar || "";
               return (
@@ -681,6 +869,7 @@ export default function Navbar() {
                   href={`/${page.slug}`}
                   className={styles.dropdownItem}
                   style={linkCustomStyle}
+                  onClick={() => setDesktopDropdownOpen(null)}
                 >
                   {title}
                 </Link>
@@ -785,7 +974,7 @@ export default function Navbar() {
           href={`https://wa.me/${(navAdv.directWhatsApp.phoneNumber || config?.socialMedia?.whatsapp || "").replace(/\D/g, "")}`}
           target="_blank"
           rel="noopener noreferrer"
-          className={styles.actionButton}
+          className={`${styles.actionButton} ${styles.hideOnMobileTopBar}`}
           style={{
             background: "rgba(37, 211, 102, 0.14)",
             color: "#25D366",
@@ -814,7 +1003,7 @@ export default function Navbar() {
       {navAdv?.primaryCta?.show && (
         <Link
           href={navAdv.primaryCta.link || "/store"}
-          className="glowButton"
+          className={`glowButton ${styles.hideOnMobileTopBar}`}
           style={{ padding: "0.45rem 1rem", fontSize: "0.85rem", borderRadius: "999px" }}
         >
           {typeof navAdv.primaryCta.text === "string"
@@ -835,13 +1024,16 @@ export default function Navbar() {
         </button>
       )}
 
-      {/* Hamburger Button */}
+      {/* Hamburger Button: Always toggles the unified Side Menu Drawer on mobile */}
       <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
+        onClick={() => {
+          setSidebarOpen((prev) => !prev);
+          setMobileMenuOpen(false);
+        }}
         className={styles.hamburger}
         aria-label="Toggle Navigation Menu"
       >
-        {sidebarOpen ? "✖" : "☰"}
+        {sidebarOpen ? "✕" : "☰"}
       </button>
     </div>
   );
@@ -856,14 +1048,191 @@ export default function Navbar() {
   return (
     <>
       <header
+        ref={headerRef}
         className={`${styles.header} ${!navbarSticky ? styles.navbarRelative : ''} ${styles[`layout_${navbarLayout}`]} ${styles[`theme_${navbarTheme}`]} ${scrolled ? styles.scrolled : ""} ${lang === "ar" ? styles.rtl : styles.ltr}`}
         style={headerInlineStyle}
       >
-        <div className={styles.container}>
+        <div ref={containerRef} className={styles.container}>
           {navbarOrder.map((key) => (
             <React.Fragment key={key}>{navBlocks[key] ?? null}</React.Fragment>
           ))}
         </div>
+
+        {/* Mobile Dropdown Drawer (attached directly below navbar when excessLinksMode is 'dropdown') */}
+        {isDropdownMode && mobileMenuOpen && (
+          <div className={`${styles.mobileDrawer} ${lang === "ar" ? styles.rtl : styles.ltr}`}>
+            {/* Mobile Search Bar */}
+            {appMode !== "blog" && navAdv?.showSearch !== false && (
+              <div className={styles.mobileSearchWrapper}>
+                <input
+                  type="text"
+                  placeholder={t.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className={styles.mobileSearchInput}
+                />
+                <span className={styles.mobileSearchIcon}>🔍</span>
+              </div>
+            )}
+
+            {/* Main Navigation Links */}
+            <div className={styles.mobileNavLinksList}>
+              <Link
+                href="/"
+                className={styles.mobileNavLink}
+                style={linkCustomStyle}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span>{t.home}</span>
+              </Link>
+
+              {(appMode === "blog" || appMode === "hybrid") && (
+                <div className={styles.mobileNavAccordion}>
+                  <div
+                    className={styles.mobileNavAccordionHeader}
+                    onClick={() => setMobileBlogExpanded((prev) => !prev)}
+                  >
+                    <div className={styles.mobileNavAccordionTitle}>
+                      <span>📝</span>
+                      <span>{t.blog}</span>
+                    </div>
+                    {categories.length > 0 && (
+                      <span className={`${styles.accordionChevron} ${mobileBlogExpanded ? styles.chevronOpen : ""}`}>
+                        {mobileBlogExpanded ? "▴" : "▾"}
+                      </span>
+                    )}
+                  </div>
+                  {mobileBlogExpanded && (
+                    <div className={styles.mobileAccordionSubList}>
+                      <Link
+                        href="/blog"
+                        className={styles.mobileAccordionSubLink}
+                        style={linkCustomStyle}
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setSidebarOpen(false);
+                        }}
+                      >
+                        ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
+                      </Link>
+                      {categories.map((cat) => {
+                        const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                        return (
+                          <Link
+                            key={cat.id}
+                            href={`/blog?category=${cat.id}`}
+                            className={styles.mobileAccordionSubLink}
+                            style={linkCustomStyle}
+                            onClick={() => {
+                              setMobileMenuOpen(false);
+                              setSidebarOpen(false);
+                            }}
+                          >
+                            📁 {nameStr}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(appMode === "store" || appMode === "hybrid") && (
+                <div className={styles.mobileNavAccordion}>
+                  <div
+                    className={styles.mobileNavAccordionHeader}
+                    onClick={() => setMobileStoreExpanded((prev) => !prev)}
+                  >
+                    <div className={styles.mobileNavAccordionTitle}>
+                      <span>🛍️</span>
+                      <span>{t.store}</span>
+                    </div>
+                    {productCategories.length > 0 && (
+                      <span className={`${styles.accordionChevron} ${mobileStoreExpanded ? styles.chevronOpen : ""}`}>
+                        {mobileStoreExpanded ? "▴" : "▾"}
+                      </span>
+                    )}
+                  </div>
+                  {mobileStoreExpanded && (
+                    <div className={styles.mobileAccordionSubList}>
+                      <Link
+                        href="/store"
+                        className={styles.mobileAccordionSubLink}
+                        style={linkCustomStyle}
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setSidebarOpen(false);
+                        }}
+                      >
+                        ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
+                      </Link>
+                      {productCategories.map((cat) => {
+                        const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                        return (
+                          <Link
+                            key={cat.id}
+                            href={`/store?category=${cat.id}`}
+                            className={styles.mobileAccordionSubLink}
+                            style={linkCustomStyle}
+                            onClick={() => {
+                              setMobileMenuOpen(false);
+                              setSidebarOpen(false);
+                            }}
+                          >
+                            📦 {nameStr}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Dynamic Pages */}
+              {navPages.map((page) => {
+                const title = typeof page.title === "string" ? page.title : page.title?.[lang] || page.title?.ar || "";
+                return (
+                  <Link
+                    key={page.id}
+                    href={`/${page.slug}`}
+                    className={styles.mobileNavLink}
+                    style={linkCustomStyle}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>{title}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Categories Chips */}
+            {((appMode === "blog" && categories.length > 0) ||
+              (appMode === "store" && productCategories.length > 0) ||
+              (appMode === "hybrid" && (categories.length > 0 || productCategories.length > 0))) && (
+              <div className={styles.mobileDrawerSection}>
+                <span className={styles.mobileDrawerSectionTitle}>
+                  {lang === "ar" ? "التصنيفات" : "Categories"}
+                </span>
+                <div className={styles.mobileDrawerChips}>
+                  {(appMode === "store" ? productCategories : categories).slice(0, 10).map((cat: any) => {
+                    const name = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                    const targetHref = appMode === "blog" ? `/blog?category=${cat.id}` : `/store?category=${cat.id}`;
+                    return (
+                      <Link
+                        key={cat.id}
+                        href={targetHref}
+                        className={styles.mobileDrawerChip}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {name}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
 
       </header>
@@ -1108,118 +1477,333 @@ export default function Navbar() {
         <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)}>
           <div
             className={`${styles.sidebarDrawer} ${lang === "ar" ? styles.rtl : styles.ltr}`}
+            style={{
+              fontFamily: "var(--font-family, inherit)",
+              ...headerInlineStyle,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.sidebarHeader}>
-              <h3>{lang === "ar" ? "المزيد" : "More"}</h3>
-              <button onClick={() => setSidebarOpen(false)} className={styles.closeBtn}>
+              <div className={styles.sidebarHeaderLogo}>
+                {config?.visual?.logoUrl ? (
+                  <img
+                    src={config.visual.logoUrl}
+                    alt={appTitle}
+                    className={styles.sidebarLogoImage}
+                  />
+                ) : (
+                  <span className={styles.logoIcon}>◆</span>
+                )}
+                <span className={styles.sidebarBrandTitle} style={logoTextStyle}>{appTitle}</span>
+              </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className={styles.closeBtn}
+                aria-label={lang === "ar" ? "إغلاق القائمة" : "Close Menu"}
+              >
                 ✕
               </button>
             </div>
 
             <div className={styles.sidebarContent}>
               {/* Mobile Search Bar */}
-              {appMode !== "blog" && (
-                <div className={`${styles.mobileSearchWrapper} ${styles.mobileOnlyLink}`} style={{ marginBottom: "1rem" }}>
+              {appMode !== "blog" && navAdv?.showSearch !== false && (
+                <div className={styles.sidebarSearchWrapper}>
                   <input
                     type="text"
                     placeholder={t.searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    className={styles.mobileSearchInput}
-                    style={{ width: "100%", padding: "0.6rem 1rem", paddingInlineEnd: "2.5rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--fg)", fontFamily: "inherit" }}
+                    className={styles.sidebarSearchInput}
                   />
-                  <span className={styles.mobileSearchIcon}>🔍</span>
+                  <span className={styles.sidebarSearchIcon}>🔍</span>
                 </div>
               )}
 
-              {/* Main navigation links (visible only on mobile) */}
-              <div className={styles.mobileOnlyLinks}>
-                <Link href="/" className={styles.sidebarLink} style={linkCustomStyle} onClick={() => setSidebarOpen(false)}>
-                  {t.home}
+              {/* Main navigation links */}
+              <div className={styles.sidebarNavGroup}>
+                <Link
+                  href="/"
+                  className={`${styles.sidebarLink} ${pathname === "/" ? styles.sidebarLinkActive : ""}`}
+                  style={linkCustomStyle}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <span>🏠</span>
+                  <span>{t.home}</span>
                 </Link>
 
-                {(appMode === "blog" || appMode === "hybrid") && (
-                  <Link href="/blog" className={styles.sidebarLink} style={linkCustomStyle} onClick={() => setSidebarOpen(false)}>
-                    {t.blog}
-                  </Link>
+                {(appMode === "store" || appMode === "hybrid") && (
+                  <div className={styles.mobileNavAccordion}>
+                    <div
+                      className={styles.mobileNavAccordionHeader}
+                      onClick={() => setMobileStoreExpanded((prev) => !prev)}
+                    >
+                      <div className={styles.mobileNavAccordionTitle}>
+                        <span>🛍️</span>
+                        <span>{t.store}</span>
+                      </div>
+                      {productCategories.length > 0 && (
+                        <span className={`${styles.accordionChevron} ${mobileStoreExpanded ? styles.chevronOpen : ""}`}>
+                          {mobileStoreExpanded ? "▴" : "▾"}
+                        </span>
+                      )}
+                    </div>
+                    {mobileStoreExpanded && (
+                      <div className={styles.mobileAccordionSubList}>
+                        <Link
+                          href="/store"
+                          className={styles.mobileAccordionSubLink}
+                          style={linkCustomStyle}
+                          onClick={() => {
+                            setSidebarOpen(false);
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
+                        </Link>
+                        {productCategories.map((cat) => {
+                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/store?category=${cat.id}`}
+                              className={styles.mobileAccordionSubLink}
+                              style={linkCustomStyle}
+                              onClick={() => {
+                                setSidebarOpen(false);
+                                setMobileMenuOpen(false);
+                              }}
+                            >
+                              📦 {nameStr}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )}
 
-                {(appMode === "store" || appMode === "hybrid") && (
-                  <Link href="/store" className={styles.sidebarLink} style={linkCustomStyle} onClick={() => setSidebarOpen(false)}>
-                    {t.store}
-                  </Link>
+                {(appMode === "blog" || appMode === "hybrid") && (
+                  <div className={styles.mobileNavAccordion}>
+                    <div
+                      className={styles.mobileNavAccordionHeader}
+                      onClick={() => setMobileBlogExpanded((prev) => !prev)}
+                    >
+                      <div className={styles.mobileNavAccordionTitle}>
+                        <span>📝</span>
+                        <span>{t.blog}</span>
+                      </div>
+                      {categories.length > 0 && (
+                        <span className={`${styles.accordionChevron} ${mobileBlogExpanded ? styles.chevronOpen : ""}`}>
+                          {mobileBlogExpanded ? "▴" : "▾"}
+                        </span>
+                      )}
+                    </div>
+                    {mobileBlogExpanded && (
+                      <div className={styles.mobileAccordionSubList}>
+                        <Link
+                          href="/blog"
+                          className={styles.mobileAccordionSubLink}
+                          style={linkCustomStyle}
+                          onClick={() => {
+                            setSidebarOpen(false);
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
+                        </Link>
+                        {categories.map((cat) => {
+                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/blog?category=${cat.id}`}
+                              className={styles.mobileAccordionSubLink}
+                              style={linkCustomStyle}
+                              onClick={() => {
+                                setSidebarOpen(false);
+                                setMobileMenuOpen(false);
+                              }}
+                            >
+                              📁 {nameStr}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {appMode === "hybrid" && (
-                  <Link href="/hybrid" className={styles.sidebarLink} style={linkCustomStyle} onClick={() => setSidebarOpen(false)}>
-                    {t.hybrid}
-                  </Link>
-                )}
-              </div>
-
-              {/* Dynamic Pages: on mobile show all navPages, on desktop show only excessPages */}
-              {navPages.map((page, idx) => {
-                const title = typeof page.title === "string" ? page.title : page.title?.[lang] || page.title?.ar || "";
-                // If it is desktop, we only show it if its index is >= EXCESS_THRESHOLD (i.e. it's in excessPages)
-                const isExcess = idx >= EXCESS_THRESHOLD;
-                return (
                   <Link
-                    key={page.id}
-                    href={`/${page.slug}`}
-                    className={`${styles.sidebarLink} ${!isExcess ? styles.mobileOnlyLink : ''}`}
+                    href="/hybrid"
+                    className={`${styles.sidebarLink} ${pathname === "/hybrid" ? styles.sidebarLinkActive : ""}`}
                     style={linkCustomStyle}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    {title}
+                    <span>🌐</span>
+                    <span>{t.hybrid}</span>
                   </Link>
-                );
-              })}
+                )}
+
+                {/* Dynamic Pages */}
+                {navPages.map((page) => {
+                  const title = typeof page.title === "string" ? page.title : page.title?.[lang] || page.title?.ar || "";
+                  return (
+                    <Link
+                      key={page.id}
+                      href={`/${page.slug}`}
+                      className={`${styles.sidebarLink} ${pathname === `/${page.slug}` ? styles.sidebarLinkActive : ""}`}
+                      style={linkCustomStyle}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span>📄</span>
+                      <span>{title}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Store Categories (Show in sidebar if appMode is store or hybrid) */}
+              {(appMode === "store" || appMode === "hybrid") && productCategories.length > 0 && (
+                <div className={styles.sidebarSection}>
+                  <span className={styles.sidebarSectionTitle}>
+                    {lang === "ar" ? "أقسام المتجر" : "Store Categories"}
+                  </span>
+                  <div className={styles.sidebarChipsGrid}>
+                    {productCategories.map((cat) => {
+                      const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                      return (
+                        <Link
+                          key={cat.id}
+                          href={`/store?category=${cat.id}`}
+                          className={styles.sidebarChipItem}
+                          style={linkCustomStyle}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          📦 {nameStr}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Blog Categories (Show in sidebar if appMode is blog or hybrid) */}
               {(appMode === "blog" || appMode === "hybrid") && categories.length > 0 && (
                 <div className={styles.sidebarSection}>
                   <span className={styles.sidebarSectionTitle}>
                     {lang === "ar" ? "أقسام المدونة" : "Blog Categories"}
                   </span>
-                  {categories.map((cat) => {
-                    const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                    return (
-                      <Link
-                        key={cat.id}
-                        href={`/blog?category=${cat.id}`}
-                        className={styles.sidebarSubLink}
-                        style={linkCustomStyle}
-                        onClick={() => setSidebarOpen(false)}
-                      >
-                        📁 {nameStr}
-                      </Link>
-                    );
-                  })}
+                  <div className={styles.sidebarChipsGrid}>
+                    {categories.map((cat) => {
+                      const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                      return (
+                        <Link
+                          key={cat.id}
+                          href={`/blog?category=${cat.id}`}
+                          className={styles.sidebarChipItem}
+                          style={linkCustomStyle}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          📁 {nameStr}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {/* Product Categories (Show in sidebar if appMode is store or hybrid) */}
-              {(appMode === "store" || appMode === "hybrid") && productCategories.length > 0 && (
-                <div className={styles.sidebarSection}>
-                  <span className={styles.sidebarSectionTitle}>
-                    {lang === "ar" ? "أقسام المتجر" : "Store Categories"}
-                  </span>
-                  {productCategories.map((cat) => {
-                    const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                    return (
-                      <Link
-                        key={cat.id}
-                        href={`/store?category=${cat.id}`}
-                        className={styles.sidebarSubLink}
-                        style={linkCustomStyle}
-                        onClick={() => setSidebarOpen(false)}
-                      >
-                        📦 {nameStr}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Tools & Settings Section */}
+              <div className={styles.sidebarSection}>
+                <span className={styles.sidebarSectionTitle}>
+                  {lang === "ar" ? "الإعدادات والحساب" : "Settings & Account"}
+                </span>
+
+                {currentUser ? (
+                  <div className={styles.sidebarUserBox}>
+                    <div className={styles.sidebarUserInfo}>
+                      <span>👤</span>
+                      <strong>{currentUser.name || currentUser.username}</strong>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setOrdersOpen(true);
+                        setSidebarOpen(false);
+                      }}
+                      className={styles.sidebarActionBtn}
+                    >
+                      📦 {lang === "ar" ? "طلباتي" : "My Orders"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setSidebarOpen(false);
+                      }}
+                      className={styles.sidebarActionBtn}
+                      style={{ color: "#ef4444" }}
+                    >
+                      🚪 {t.logout}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setLoginOpen(true);
+                      setSidebarOpen(false);
+                    }}
+                    className={styles.sidebarActionBtn}
+                  >
+                    👤 {t.login}
+                  </button>
+                )}
+
+                {/* Language Switch */}
+                <button
+                  onClick={() => {
+                    changeLanguage(lang === "ar" ? "en" : "ar");
+                    setSidebarOpen(false);
+                  }}
+                  className={styles.sidebarActionBtn}
+                >
+                  🌐 {lang === "ar" ? "English" : "العربية"}
+                </button>
+
+                {/* Theme Switch */}
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                  }}
+                  className={styles.sidebarActionBtn}
+                >
+                  {theme === "light" ? "🌙" : "☀️"} {theme === "light" ? (lang === "ar" ? "الوضع الداكن" : "Dark Mode") : (lang === "ar" ? "الوضع الفاتح" : "Light Mode")}
+                </button>
+
+                {/* Direct WhatsApp */}
+                {(navAdv?.directWhatsApp?.show || config?.socialMedia?.whatsapp) && (
+                  <a
+                    href={`https://wa.me/${(navAdv?.directWhatsApp?.phoneNumber || config?.socialMedia?.whatsapp || "").replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.sidebarWhatsAppBtn}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span>💬</span>
+                    <span>{lang === "ar" ? "تواصل معنا عبر واتساب" : "Chat on WhatsApp"}</span>
+                  </a>
+                )}
+
+                {/* Feedback Modal */}
+                <button
+                  onClick={() => {
+                    setFeedbackOpen(true);
+                    setSidebarOpen(false);
+                  }}
+                  className={styles.sidebarFeedbackBtn}
+                >
+                  💬 {lang === "ar" ? "إبداء رأيك بالموقع" : "Send Feedback"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

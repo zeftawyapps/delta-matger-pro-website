@@ -69,6 +69,19 @@ export const applyTheme = (
   const error = formatColor(activePalette.error || '#E53935');
   const warning = formatColor(activePalette.warning || '#FFFFB300');
   const info = formatColor(activePalette.info || '#2196F3');
+  const herbGreen = formatColor(activePalette.herbGreen || '#8FA883');
+  const icon = formatColor(activePalette.icon || primary);
+  const buttonPrimary = formatColor(activePalette.buttonPrimary || primary);
+  const buttonSecondary = formatColor(activePalette.buttonSecondary || secondary);
+  const buttonText = formatColor(activePalette.buttonText || '#FFFFFF');
+  const inputFocus = formatColor(activePalette.inputFocus || primary);
+
+  // Dedicated Website Colors (Header, Footer, Hero Overlay)
+  const website = themes?.website;
+  const headerBackground = formatColor(website?.headerBackground || (isDarkMode ? '#1A2332' : '#FFFFFF'));
+  const footerBackground = formatColor(website?.footerBackground || (isDarkMode ? '#1A2332' : '#1A2332'));
+  const footerText = formatColor(website?.footerText || '#FAF8F3');
+  const heroOverlay = website?.heroOverlay ? formatColor(website.heroOverlay) : 'rgba(0, 0, 0, 0.5)';
 
   const cssText = `
     :root {
@@ -82,13 +95,23 @@ export const applyTheme = (
       --color-text-secondary: ${textSecondary};
       --color-text-hint: ${textHint};
       --color-text-on-primary: ${textOnPrimary};
+      --color-button-primary: ${buttonPrimary};
+      --color-button-secondary: ${buttonSecondary};
+      --color-button-text: ${buttonText};
       --color-divider: ${divider};
+      --color-icon: ${icon};
       --color-input-background: ${inputBackground};
       --color-input-border: ${inputBorder};
+      --color-input-focus: ${inputFocus};
       --color-success: ${success};
       --color-error: ${error};
       --color-warning: ${warning};
       --color-info: ${info};
+      --color-herb-green: ${herbGreen};
+      --color-header-bg: ${headerBackground};
+      --color-footer-bg: ${footerBackground};
+      --color-footer-text: ${footerText};
+      --color-hero-overlay: ${heroOverlay};
       --color-glass-bg: ${isDarkMode ? 'rgba(36, 47, 63, 0.75)' : 'rgba(255, 255, 255, 0.75)'};
       --color-glass-border: ${isDarkMode ? 'rgba(61, 74, 92, 0.4)' : 'rgba(229, 220, 200, 0.4)'};
       --color-glass-shadow: ${isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(26, 35, 50, 0.05)'};

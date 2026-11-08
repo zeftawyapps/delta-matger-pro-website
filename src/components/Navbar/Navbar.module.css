@@ -5,11 +5,12 @@
   width: 100%;
   z-index: 100;
   transition: all var(--transition-smooth) ease;
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Sticky OFF: navbar scrolls with the page */
 .navbarRelative {
-  position: static !important;
+  position: relative !important;
 }
 
 /* Navbar Layout Shapes */
@@ -68,6 +69,7 @@
 .theme_accent .logoText,
 .theme_accent .logoIcon,
 .theme_accent .actionButton,
+.theme_accent .dropdownToggle,
 .theme_accent .hamburger {
   color: #ffffff !important;
 }
@@ -415,20 +417,36 @@
   }
 }
 
-/* Mobile navigation drawer */
+/* Mobile navigation drawer (Dropdown attached directly below navbar) */
 .mobileDrawer {
   position: absolute;
   top: 100%;
   left: 0;
   width: 100%;
   background: var(--surface);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--border);
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem 1.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  box-shadow: 0 8px 16px var(--shadow);
+  gap: 1.15rem;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.18);
+  max-height: calc(100vh - var(--navbar-height, 65px));
+  overflow-y: auto;
+  animation: mobileDropdownSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 150;
+}
+
+@keyframes mobileDropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (min-width: 1024px) {
@@ -444,13 +462,20 @@
 
 .mobileSearchInput {
   width: 100%;
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1rem;
   padding-inline-end: 2.5rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--fg);
   font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.mobileSearchInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
 }
 
 .mobileSearchIcon {
@@ -461,11 +486,156 @@
   opacity: 0.6;
 }
 
+.mobileNavLinksList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .mobileNavLink {
   font-weight: 600;
-  font-size: 1.1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border);
+  font-size: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all var(--transition-fast) ease;
+}
+
+.mobileNavLink:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
+/* Accordion Collapsible for Blog & Store in Mobile Drawer */
+.mobileNavAccordion {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.mobileNavAccordionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  user-select: none;
+}
+
+.mobileNavAccordionHeader:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+
+.mobileNavAccordionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.accordionChevron {
+  font-size: 1.05rem;
+  opacity: 0.75;
+  transition: transform 0.2s ease;
+  padding: 0 0.35rem;
+  line-height: 1;
+}
+
+.chevronOpen {
+  color: var(--primary);
+  opacity: 1;
+}
+
+.mobileAccordionSubList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-inline-start: 1.25rem;
+  padding-block: 0.35rem;
+  margin-top: 0.2rem;
+  border-inline-start: 2px solid color-mix(in srgb, var(--primary) 25%, transparent);
+  margin-inline-start: 1rem;
+  animation: accordionFade 0.2s ease forwards;
+}
+
+@keyframes accordionFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobileAccordionSubLink {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--fg);
+  text-decoration: none;
+  transition: all var(--transition-fast) ease;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.mobileAccordionSubLink:hover {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  padding-inline-start: 1rem;
+}
+
+.mobileDrawerSection {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.mobileDrawerSectionTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--fg);
+  opacity: 0.65;
+}
+
+.mobileDrawerChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.mobileDrawerChip {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 90%, var(--border));
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg);
+  text-decoration: none;
+  transition: all var(--transition-fast) ease;
+}
+
+.mobileDrawerChip:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
 }
 
 /* Luxury Cart Overlay & Slider Drawer */
@@ -960,15 +1130,27 @@
   box-shadow: 0px 8px 30px var(--shadow);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0;
-  z-index: 10;
+  z-index: 100;
   border: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   animation: fadeInFast 0.2s ease forwards;
 }
 
-.dropdownContainer:hover .dropdownMenu {
-  display: block;
+/* Hover bridge so moving cursor down never closes the dropdown prematurely */
+.dropdownMenu::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
+
+.dropdownContainer:hover .dropdownMenu,
+.dropdownContainer:focus-within .dropdownMenu,
+.dropdownMenuOpen {
+  display: block !important;
 }
 
 .dropdownItem {
@@ -998,70 +1180,184 @@
   }
 }
 
-/* Sidebar styles */
+/* Sidebar styles & Unified Mobile Drawer Overlay */
 .sidebarOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
   display: flex;
-  justify-content: flex-end;
 }
 
 .sidebarDrawer {
-  width: 100%;
-  max-width: 320px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 86%;
+  max-width: 340px;
+  height: 100%;
   background: var(--surface);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-inline-start: 1px solid var(--border);
-  box-shadow: -5px 0 30px var(--shadow);
+  color: var(--fg);
   display: flex;
   flex-direction: column;
-  height: 100%;
-  animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  z-index: 10001;
 }
 
+/* RTL: القائمة تنزلق بانسيابية من اليمين (بداية النصوص العربية) */
 .rtl.sidebarDrawer {
-  animation: slideInRTL 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  right: 0;
+  left: auto;
+  border-inline-start: 1px solid var(--border);
+  animation: slideDrawerFromRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* LTR: القائمة تنزلق بانسيابية من اليسار (بداية النصوص الإنجليزية) */
+.ltr.sidebarDrawer {
+  left: 0;
+  right: auto;
+  border-inline-end: 1px solid var(--border);
+  animation: slideDrawerFromLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideDrawerFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideDrawerFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 .sidebarHeader {
-  padding: 1.5rem;
+  padding: 1.15rem 1.25rem;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.sidebarHeaderLogo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.sidebarLogoImage {
+  height: 32px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.sidebarBrandTitle {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.closeBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
 }
 
 .sidebarContent {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.sidebarLink {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--fg);
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
-  text-align: start;
+.sidebarSearchWrapper {
+  position: relative;
+  width: 100%;
 }
 
-.sidebarLink:hover {
-  background: var(--surface-hover);
+.sidebarSearchInput {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  padding-inline-end: 2.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.92rem;
+}
+
+.sidebarSearchIcon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  inset-inline-end: 0.75rem;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.sidebarNavGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sidebarLink {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--fg);
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  text-decoration: none;
+}
+
+.sidebarLink:hover,
+.sidebarLinkActive {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   color: var(--primary);
 }
 
 .sidebarSection {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.65rem;
   border-top: 1px solid var(--border);
   padding-top: 1rem;
 }
@@ -1071,26 +1367,170 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
-  opacity: 0.6;
-  padding: 0 1rem;
-  margin-bottom: 0.25rem;
+  opacity: 0.65;
+  color: var(--fg);
+  margin-bottom: 0.2rem;
 }
 
-.sidebarSubLink {
-  font-size: 0.85rem;
+.sidebarChipsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.sidebarChipItem {
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--fg);
-  padding: 0.45rem 1.25rem;
-  border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+  border: 1px solid var(--border);
   text-decoration: none;
-  display: flex;
-  align-items: center;
+  transition: all var(--transition-fast) ease;
 }
 
-.sidebarSubLink:hover {
-  background: var(--surface-hover);
+.sidebarChipItem:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.sidebarActionBtn {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-fast) ease;
+}
+
+.sidebarActionBtn:hover {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   color: var(--primary);
+}
+
+.sidebarUserBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebarUserInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.95rem;
+  color: var(--fg);
+}
+
+.sidebarWhatsAppBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  background: #25D366;
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.92rem;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  margin-top: 0.25rem;
+}
+
+.sidebarWhatsAppBtn:hover {
+  opacity: 0.92;
+}
+
+.sidebarFeedbackBtn {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--fg);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  opacity: 0.85;
+}
+
+.sidebarFeedbackBtn:hover {
+  opacity: 1;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Mobile top bar polish & safety */
+@media (max-width: 1023px) {
+  .header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    z-index: 1000 !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+
+  .container {
+    padding: 0.75rem 1rem !important;
+    gap: 0.5rem !important;
+    justify-content: space-between !important;
+    max-width: 100% !important;
+  }
+
+  .logo {
+    gap: 0.5rem !important;
+    max-width: 65% !important;
+  }
+
+  .logoImage {
+    height: 40px !important;
+    max-width: 140px !important;
+  }
+
+  .logoText {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .actions {
+    gap: 0.45rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .hamburger {
+    display: flex !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.5rem !important;
+    background: transparent !important;
+    border: none !important;
+    color: inherit !important;
+  }
+
+  .hideOnMobileTopBar {
+    display: none !important;
+  }
 }
 
 .mobileOnlyLinks {

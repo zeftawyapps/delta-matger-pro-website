@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { BlogPost } from "@/types";
 import { stripHtml } from "@/utils/html";
+import { resolveLocalizedText, buildCardStyleProps } from "@/utils/sectionHelpers";
 import styles from "./BlogComponents.module.css";
 
 interface PostGridProps {
   posts: BlogPost[];
   displayMode?: "grid" | "list" | "slider" | "slide" | "horizontal_list" | "horizontal" | "scroll" | string;
+  config?: any;
 }
 
-export default function PostGrid({ posts, displayMode = "grid" }: PostGridProps) {
+export default function PostGrid({ posts, displayMode = "grid", config }: PostGridProps) {
   const { lang, t, categories } = useApp();
 
   const isSlider =
@@ -31,9 +33,10 @@ export default function PostGrid({ posts, displayMode = "grid" }: PostGridProps)
 
   // Ensure only actual blog posts are rendered (exclude static pages and intros)
   const validPosts = posts.filter((p) => p.postType !== "page" && p.postType !== "intro");
+  const cardStyleVars = buildCardStyleProps(config?.cardStyle || config);
 
   return (
-    <section className={styles.gridSection}>
+    <section className={styles.gridSection} style={cardStyleVars as any}>
       <div className={`${styles.postsGrid} ${modeClass}`}>
         {validPosts.map((post, idx) => {
           const rawTitle = typeof post.title === "string" ? post.title : post.title?.[lang as any] || post.title?.ar || "";
@@ -59,14 +62,61 @@ export default function PostGrid({ posts, displayMode = "grid" }: PostGridProps)
 
           const categoryObj = categories.find((c) => c.id === post.blogCategoryId);
           const categoryName = categoryObj ? (categoryObj.name?.[lang as any] || categoryObj.name?.ar || "") : "";
+          const categoryUrl = post.blogCategoryId ? `/blog?category=${post.blogCategoryId}` : null;
+          const rawSlug = typeof post.slug === "string" ? post.slug : ((post.slug as any)?.ar || (post.slug as any)?.en || post.id || "");
+          const postSlug = (rawSlug || "").trim().replace(/^\/+/, "");
+          const postUrl = `/blog/${postSlug}`;
+
+          // Card Action Button Styling & Formatting
+          const rawButtonType = config?.cardButtonType || config?.buttonType || config?.readMoreStyle || "material";
+          const showButton = rawButtonType !== "none" && config?.showCardButton !== false;
+          const buttonText =
+            resolveLocalizedText(config?.cardButtonText || config?.buttonText, lang) ||
+            resolveLocalizedText(post.ctaButtonText, lang) ||
+            t.readMore;
+          const buttonAlign = config?.cardButtonAlign || "start";
+
+          const btnClass =
+            rawButtonType === "text"
+              ? styles.btn_text
+              : rawButtonType === "outline"
+              ? styles.btn_outline
+              : styles.btn_material;
+
+          const footerAlignClass =
+            buttonAlign === "center"
+              ? styles.align_center
+              : buttonAlign === "end"
+              ? styles.align_end
+              : buttonAlign === "full"
+              ? styles.align_full
+              : styles.align_start;
 
           return (
-            <article key={`${post.id}-${idx}`} className={`${styles.postCard} glassCard animateFadeUp`}>
-              <Link href={`/blog/${post.slug}`} className={styles.cardImgWrapper} aria-label={titleStr}>
-                <img src={imgUrl} alt={titleStr} className={styles.cardImg} loading="lazy" />
-                <div className={styles.cardImgOverlay} />
-                {categoryName && <span className={styles.cardCategory}>{categoryName}</span>}
-              </Link>
+            <article
+              key={`${post.id}-${idx}`}
+              className={`${styles.postCard} glassCard animateFadeUp`}
+              style={cardStyleVars as any}
+            >
+              <div className={styles.cardImgWrapper}>
+                <Link href={postUrl} className={styles.cardImgLink} aria-label={titleStr}>
+                  <img src={imgUrl} alt={titleStr} className={styles.cardImg} loading="lazy" />
+                  <div className={styles.cardImgOverlay} />
+                </Link>
+                {categoryName && (
+                  categoryUrl ? (
+                    <Link
+                      href={categoryUrl}
+                      className={styles.cardCategory}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {categoryName}
+                    </Link>
+                  ) : (
+                    <span className={styles.cardCategory}>{categoryName}</span>
+                  )
+                )}
+              </div>
               
               <div className={styles.cardBody}>
                 <div className={styles.cardMeta}>
@@ -91,24 +141,26 @@ export default function PostGrid({ posts, displayMode = "grid" }: PostGridProps)
                   </span>
                 </div>
 
-                <Link href={`/blog/${post.slug}`} className={styles.cardTitleLink}>
+                <Link href={postUrl} className={styles.cardTitleLink}>
                   <h3 className={styles.cardTitle}>{titleStr}</h3>
                 </Link>
 
                 {fallbackDesc && <p className={styles.cardSnippet}>{fallbackDesc}</p>}
-                
-                <div className={styles.cardFooter}>
-                  <Link href={`/blog/${post.slug}`} className={styles.readMoreBtn}>
-                    <span>{t.readMore}</span>
-                    <svg className={styles.readMoreArrow} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      {lang === "ar" ? (
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      ) : (
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      )}
-                    </svg>
-                  </Link>
-                </div>
+
+                {showButton && (
+                  <div className={`${styles.cardFooter} ${footerAlignClass}`}>
+                    <Link href={postUrl} className={btnClass}>
+                      <span>{buttonText}</span>
+                      <svg className={styles.readMoreArrow} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        {lang === "ar" ? (
+                          <path d="M19 12H5M12 19l-7-7 7-7" />
+                        ) : (
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        )}
+                      </svg>
+                    </Link>
+                  </div>
+                )}
               </div>
             </article>
           );

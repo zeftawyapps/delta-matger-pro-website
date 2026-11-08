@@ -3,7 +3,7 @@
   width: 100%;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0;
   isolation: isolate;
 }
 
@@ -313,6 +313,64 @@
   .splitText {
     padding: 1.75rem 1.25rem;
   }
+}
+
+/* Centered layout when there's no hero image */
+.splitWrapperCentered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: clamp(420px, 55vh, 580px);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(3rem, 6vw, 6rem) clamp(1.5rem, 4vw, 3rem);
+}
+
+.centeredContent {
+  max-width: 896px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.centeredContent h1 {
+  font-size: clamp(2.2rem, 1.8rem + 3.5vw, 4.2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.25rem;
+}
+
+.centeredContent p {
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.35rem);
+  line-height: 1.7;
+  opacity: 0.88;
+  max-width: 680px;
+  margin-bottom: 2rem;
+}
+
+.secondaryHeroBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid currentColor;
+  background: transparent;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.secondaryHeroBtn:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 

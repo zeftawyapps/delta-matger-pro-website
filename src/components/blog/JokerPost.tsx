@@ -81,6 +81,9 @@ export default function JokerPost({ post, posts, title, description, config }: J
 
     const edgeRadiusClass = isFullScreen && isZeroMargin ? styles.jokerCardFullScreenEdge : "";
 
+    const rawSlug = typeof p.slug === "string" ? p.slug : ((p.slug as any)?.ar || (p.slug as any)?.en || p.id || "");
+    const postSlug = (rawSlug || "").trim().replace(/^\/+/, "");
+
     return (
       <div
         key={p.id}
@@ -117,7 +120,7 @@ export default function JokerPost({ post, posts, title, description, config }: J
                 {readingTime} {t.minsRead}
               </span>
             </div>
-            <Link href={`/blog/${p.slug}`} className="glowButton">
+            <Link href={`/blog/${postSlug}`} className="glowButton">
               {lang === "ar" ? "اقرأ المقال ←" : "Read Article →"}
             </Link>
           </div>

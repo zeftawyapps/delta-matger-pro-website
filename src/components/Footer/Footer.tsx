@@ -103,10 +103,31 @@ export default function Footer() {
   const clientFooter = (clientConfig as any)?.footer;
   const clientSocial = (clientConfig as any)?.socialMedia;
 
-  const footerDesc = config?.footer?.description || clientFooter?.description || (clientConfig as any)?.appDescription || t.slogan;
-  const address = config?.footer?.address || clientFooter?.address || (lang === "ar" ? "القاهرة، جمهورية مصر العربية" : "Cairo, Egypt");
-  const phone = config?.footer?.phone || clientFooter?.phone || "+20 100 000 0000";
-  const email = config?.footer?.email || clientFooter?.email || "support@domancy.com";
+  // Footer Logo & Branding Config (resolves website.footer > config.footer > clientConfig.footer)
+  const footerConfig = config?.website?.footer || config?.footer || clientFooter || {};
+
+  // 1. هل يتم إظهار الشعار؟
+  const showLogo = footerConfig.showLogo ?? true;
+
+  // 2. تحديد مصدر الصورة (شعار مخصص للفوتر أم الشعار العام)
+  const effectiveLogoUrl =
+    (footerConfig.logoUrl && footerConfig.logoUrl.trim().length > 0)
+      ? footerConfig.logoUrl
+      : (config?.website?.footerLogoUrl || config?.visual?.logoUrl || (clientConfig as any)?.logoUrl || '');
+
+  // 3. ارتفاع الشعار (إذا حُدد رقم مخصص، وإلا يعتمد على CSS الافتراضي)
+  const logoHeight = Number(footerConfig.logoHeight) || 0;
+
+  // 4. هل يتم إظهار اسم المتجر بجوار الشعار؟
+  const showTitle = footerConfig.showTitle ?? true;
+
+  // 5. ستايل الشعار (Solid أم Gradient)
+  const logoStyle = footerConfig.logoStyle || 'solid';
+
+  const footerDesc = footerConfig?.description || clientFooter?.description || (clientConfig as any)?.appDescription || t.slogan;
+  const address = footerConfig?.address || clientFooter?.address || (lang === "ar" ? "القاهرة، جمهورية مصر العربية" : "Cairo, Egypt");
+  const phone = footerConfig?.phone || clientFooter?.phone || "+20 100 000 0000";
+  const email = footerConfig?.email || clientFooter?.email || "support@domancy.com";
 
   const facebookUrl = config?.socialMedia?.facebook || clientSocial?.facebook || "";
   const telegramUrl = config?.socialMedia?.telegram || clientSocial?.telegram || "";
@@ -126,20 +147,26 @@ export default function Footer() {
       <div className={styles.container}>
         {/* Column 1: Slogan/Definition */}
         <div className={styles.column}>
-          <Link href="/" className={styles.logo}>
-            {config?.visual?.logoUrl || (clientConfig as any)?.logoUrl ? (
-              <img
-                src={config?.visual?.logoUrl || (clientConfig as any)?.logoUrl}
-                alt={appTitle}
-                className={styles.logoImage}
-              />
-            ) : (
-              <>
+          {(showLogo || showTitle) && (
+            <Link href="/" className={styles.logo}>
+              {showLogo && effectiveLogoUrl ? (
+                <img
+                  src={effectiveLogoUrl}
+                  alt={appTitle}
+                  style={logoHeight > 0 ? { height: `${logoHeight}px`, width: 'auto', objectFit: 'contain' } : undefined}
+                  className={`${styles.logoImage} ${logoStyle === 'gradient' ? styles.logoGradient : ''}`}
+                />
+              ) : showLogo ? (
                 <span className={styles.logoIcon}>◆</span>
-                <span className={styles.logoText}>{appTitle}</span>
-              </>
-            )}
-          </Link>
+              ) : null}
+
+              {showTitle && (
+                <span className={`${styles.logoText} ${logoStyle === 'gradient' ? styles.logoTitleGradient : ''}`}>
+                  {appTitle}
+                </span>
+              )}
+            </Link>
+          )}
           <p className={styles.sloganText}>{footerDesc}</p>
           <p className={styles.taglineText}>{t.tagline}</p>
         </div>

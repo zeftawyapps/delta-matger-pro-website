@@ -21,6 +21,9 @@ export interface ClassicHeroChrome {
   buttonShape?: string;
   showButtonArrow?: boolean;
   showButton: boolean;
+  showSecondaryButton: boolean;
+  secondaryButtonText?: string;
+  secondaryButtonLink?: string;
   showGlow: boolean;
   useGradientTitle: boolean;
   showImage: boolean;
@@ -36,7 +39,7 @@ function modeDefaults(
   lang: string
 ): Omit<
   ClassicHeroChrome,
-  "showBadge" | "showButton" | "showGlow" | "useGradientTitle" | "showImage" | "showPrice"
+  "showBadge" | "showButton" | "showGlow" | "useGradientTitle" | "showImage" | "showPrice" | "showSecondaryButton"
 > {
   if (appMode === "store") {
     return {
@@ -80,13 +83,28 @@ export function getClassicHeroChrome(
   const defaults = modeDefaults(appMode, lang);
   const badgeFromConfig = resolveIntroLocalized(config.badgeText, lang);
   const buttonFromConfig = resolveIntroLocalized(config.buttonText, lang);
+  const secondaryButtonFromConfig = resolveIntroLocalized(config.secondaryButtonText, lang);
 
-  const showImage =
-    config.showHeroImage !== false &&
-    !!(config.heroImageUrl || slideImage || (appMode === "store" ? defaults.imageUrl : undefined));
+  const hasCustomHeroImage = Boolean(config.heroImageUrl && config.heroImageUrl.trim().length > 0);
+  const hasSlideImage = Boolean(slideImage && slideImage.trim().length > 0);
+
+  let resolvedImageUrl: string | undefined = undefined;
+  if (config.showHeroImage !== false) {
+    if (hasCustomHeroImage) {
+      resolvedImageUrl = config.heroImageUrl?.trim();
+    } else if (hasSlideImage) {
+      resolvedImageUrl = slideImage?.trim();
+    } else if (config.heroImageUrl === undefined && slideImage === undefined && appMode === "store") {
+      resolvedImageUrl = defaults.imageUrl;
+    }
+  }
+  const showImage = Boolean(resolvedImageUrl);
 
   const resolvedButtonText =
     buttonFromConfig || (config.showButton !== false ? (slideMeta?.link ? (lang === "ar" ? "عرض التفاصيل" : "View Details") : defaults.buttonText) : "");
+
+  const showSecondaryButton = config.showSecondaryButton === true && Boolean(secondaryButtonFromConfig);
+  const secondaryButtonLink = (config.secondaryButtonLink && config.secondaryButtonLink.trim()) || "#";
 
   return {
     badge: badgeFromConfig || slideMeta?.badge || (config.showBadge !== false ? defaults.badge : ""),
@@ -100,10 +118,13 @@ export function getClassicHeroChrome(
     buttonShape: config.buttonShape,
     showButtonArrow: config.showButtonArrow === true,
     showButton: config.showButton !== false,
+    showSecondaryButton,
+    secondaryButtonText: secondaryButtonFromConfig,
+    secondaryButtonLink,
     showGlow: config.showGlow !== false,
     useGradientTitle: config.useGradientTitle !== false,
     showImage,
-    imageUrl: config.heroImageUrl || slideImage || defaults.imageUrl,
+    imageUrl: resolvedImageUrl,
     showPrice: (slideMeta?.price != null) ? (config.showPrice !== false) : config.showPrice === true,
     price: slideMeta?.price ?? config.price ?? defaults.price,
     originalPrice: slideMeta?.originalPrice ?? config.originalPrice ?? defaults.originalPrice,

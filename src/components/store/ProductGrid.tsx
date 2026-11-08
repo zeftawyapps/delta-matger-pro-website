@@ -6,18 +6,21 @@ import { useApp } from "@/context/AppContext";
 import { Product } from "@/types";
 import { formatPrice } from "@/utils/currency";
 import { getFullImageUrl } from "@/services/api";
+import { buildCardStyleProps } from "@/utils/sectionHelpers";
 import styles from "./StoreComponents.module.css";
 
 interface ProductGridProps {
   products: Product[];
   /** Number of columns (maps to config.crossAxisCount). Falls back to responsive auto-fill. */
   columns?: number;
+  config?: any;
 }
 
-export default function ProductGrid({ products, columns }: ProductGridProps) {
+export default function ProductGrid({ products, columns, config }: ProductGridProps) {
   const { addToCart, t, lang, productCategories, organizationPolicy } = useApp();
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+  const cardStyleVars = buildCardStyleProps(config?.cardStyle || config);
 
   const gridStyle = columns
     ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
@@ -50,9 +53,11 @@ export default function ProductGrid({ products, columns }: ProductGridProps) {
     setBrokenImages((prev) => ({ ...prev, [productId]: true }));
   };
 
+  const isMobileCarousel = config?.mobileDisplayMode === "carousel";
+
   return (
     <section className={styles.productSection}>
-      <div className={styles.productsGrid} style={gridStyle}>
+      <div className={`${styles.productsGrid} ${isMobileCarousel ? styles.mobileCarousel : ""}`} style={gridStyle}>
         {products.map((product) => {
           const nameStr = typeof product.name === "string" ? product.name : product.name?.[lang] || product.name?.ar || "";
           const rawImg = product.imageUrl || (product as any).image || product.imageUrls?.[0] || "";
@@ -87,7 +92,11 @@ export default function ProductGrid({ products, columns }: ProductGridProps) {
           const isBestSeller = product.isBestSeller;
 
           return (
-            <div key={product.id} className={`${styles.productCard} glassCard animateFadeUp`}>
+            <div
+              key={product.id}
+              className={`${styles.productCard} glassCard animateFadeUp`}
+              style={cardStyleVars as any}
+            >
               <Link href={`/store/${product.id}`} className={styles.productLink}>
                 <div className={styles.productImgWrapper}>
                   {!hasBrokenImg ? (

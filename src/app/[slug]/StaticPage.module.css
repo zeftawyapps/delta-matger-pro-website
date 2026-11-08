@@ -4,13 +4,14 @@
   flex-direction: column;
   background: var(--bg);
   color: var(--fg);
+  padding-top: var(--navbar-height, calc(65px + env(safe-area-inset-top, 0px)));
 }
 
 .main {
   flex: 1;
   max-width: 900px;
   width: 100%;
-  margin: 8rem auto 4rem;
+  margin: 2.5rem auto 4rem;
   padding: 0 2rem;
 }
 
@@ -66,6 +67,8 @@
 
 .content p {
   margin-bottom: 1.5rem;
+  white-space: pre-line;
+  text-align: justify;
 }
 
 .content ul, .content ol {

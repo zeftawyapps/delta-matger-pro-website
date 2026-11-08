@@ -401,6 +401,10 @@ intro config key
 | `section.config.crossAxisCount`  | داخل sections المنتجات                    |
 | `section.config.limit`           | داخل sections المقالات                    |
 | `section.config.autoPlay`        | داخل sections العروض والسلايدر             |
+| `section.config.marginX`         | الهامش الأفقي للسكشن يميناً ويساراً (أو `hasMarginX: false`) |
+| `section.config.paddingX`        | الحشو الداخلي الأفقي للسكشن (يمين ويسار)  |
+| `section.config.margin`          | المسافة الرأسية السفلية للسكشن            |
+| `section.config.paddingY`        | الحشو الداخلي الرأسي للسكشن (أعلى وأسفل)  |
 
 ---
 
@@ -446,7 +450,20 @@ interface WebsiteSection {
     // jocker post
     imageCount?: number;
     fullScreen?: boolean;
-    margin?: number;
+    // spacing & margins
+    margin?: number | string;
+    marginBottom?: number | string;
+    marginTop?: number | string;
+    hasMargin?: boolean;
+    marginX?: number | string;
+    marginHorizontal?: number | string;
+    marginLeft?: number | string;
+    marginRight?: number | string;
+    hasMarginX?: boolean;
+    hasHorizontalMargin?: boolean;
+    fullWidth?: boolean;
+    paddingX?: number | string;
+    paddingY?: number | string;
     // custom banner
     imageUrl?: string;
     linkUrl?: string;

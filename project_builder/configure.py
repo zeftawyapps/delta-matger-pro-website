@@ -236,13 +236,14 @@ def get_organizations(client_config):
         ""
     )
     
+    _script_dir = os.path.dirname(os.path.abspath(__file__))
     legacy_org = {
         "orgId": "default",
         "isDefaultTest": True,
         "defaultOrgName": branding.get("defaultOrgName", "deltastore"),
         "hostingSite": hosting_site,
         "appTitle": branding.get("appTitle", "Delta Store"),
-        "logo": branding.get("logo", "logo/domansy.jpg"),
+        "logo": branding.get("logo", "logo/domansy.png" if os.path.exists(os.path.join(_script_dir, "clients", "logo", "domansy.png")) else "logo/domansy.jpg"),
         "seo": {
             "appDescription": branding.get("appDescription", "متجرك الإلكتروني للتسوق وتلبية كافة احتياجاتك."),
             "keywords": "متجر, تسوق, إلكتروني",
@@ -355,7 +356,7 @@ def main():
     default_org_name = target_org.get("defaultOrgName", "deltastore")
     hosting_site = target_org.get("hostingSite", "")
     app_title = target_org.get("appTitle", "Delta Store")
-    logo = target_org.get("logo", "logo/domansy.jpg")
+    logo = target_org.get("logo", "logo/domansy.png" if os.path.exists(os.path.join(script_dir, "clients", "logo", "domansy.png")) else "logo/domansy.jpg")
     
     seo_cfg = target_org.get("seo", {}) if isinstance(target_org.get("seo"), dict) else {}
     app_description = seo_cfg.get("appDescription", "متجرك الإلكتروني للتسوق وتلبية كافة احتياجاتك.")

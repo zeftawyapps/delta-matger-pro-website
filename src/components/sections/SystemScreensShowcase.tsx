@@ -7,6 +7,7 @@ import { getFullImageUrl } from "@/services/api";
 import { formatPrice } from "@/utils/currency";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
 import { SystemShowcaseItem, SystemShowcaseHotspot } from "@/types";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./Sections.module.css";
 
 interface SystemScreensShowcaseProps {
@@ -78,12 +79,11 @@ export default function SystemScreensShowcase({
 
   return (
     <section className={`${styles.sectionContainer} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.sectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
 
       {/* Interactive Tabs Bar */}
       {screens.length > 1 && (

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { getFullImageUrl } from "@/services/api";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
+import { SectionConfig } from "@/types";
 import styles from "./StoreComponents.module.css";
 
 interface ShowcaseTab {
@@ -22,10 +24,11 @@ interface ShowcaseProps {
   tabs?: ShowcaseTab[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: SectionConfig;
   displayMode?: string;
 }
 
-export default function Showcase({ tabs, title, description, displayMode = "tabs" }: ShowcaseProps) {
+export default function Showcase({ tabs, title, description, config, displayMode = "tabs" }: ShowcaseProps) {
   const { lang } = useApp();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -63,12 +66,7 @@ export default function Showcase({ tabs, title, description, displayMode = "tabs
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader title={titleText} description={descText} config={config} />
 
       <div className={styles.showcaseWrapper}>
         <div className={styles.tabButtons}>

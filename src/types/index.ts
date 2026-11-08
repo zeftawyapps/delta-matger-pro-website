@@ -133,6 +133,21 @@ export interface Product {
   };
 }
 
+export interface FooterConfig {
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  trustBadge?: string;
+  copyright?: string;
+  showLogo?: boolean;
+  logoUrl?: string;
+  logoHeight?: number;
+  showTitle?: boolean;
+  logoStyle?: 'solid' | 'gradient';
+  feedbackTitle?: string;
+}
+
 export interface OrgConfig {
   id: string;
   appBranding?: {
@@ -161,20 +176,18 @@ export interface OrgConfig {
     whatsapp?: string;
     instagram?: string;
   };
-  footer?: {
-    address?: string;
-    email?: string;
-    phone?: string;
-    description?: string;
-    trustBadge?: string;
-    copyright?: string;
-  };
+  footer?: FooterConfig;
   policies?: {
     privacyHtml?: string;
     returnHtml?: string;
   };
   appVersion?: string;
   appBuildIndex?: number;
+  layout?: {
+    appTitle?: string;
+    showCart?: boolean;
+    showSearch?: boolean;
+  };
   website?: WebsiteConfig;
 }
 
@@ -225,6 +238,9 @@ export interface IntroSlideConfig {
   showButton?: boolean;
   buttonText?: string | Record<string, string>;
   buttonLink?: string;
+  showSecondaryButton?: boolean;
+  secondaryButtonText?: string | Record<string, string>;
+  secondaryButtonLink?: string;
   buttonBg?: string;
   buttonBackgroundType?: 'solid' | 'gradient';
   buttonTextColor?: string;
@@ -244,6 +260,51 @@ export interface IntroSlideConfig {
 
 export type ThemePreset = 'dark_tech' | 'clean_minimal' | 'luxury_gold' | 'vibrant_ecom';
 
+export type CardRadiusPreset = 'none' | 'square' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'pill' | 'full' | number | string;
+export type CardShadowPreset = 'none' | 'sm' | 'subtle' | 'md' | 'medium' | 'lg' | 'high' | 'xl' | 'floating' | 'glow' | boolean | string;
+export type CardElevationPreset = 'none' | 'low' | 'sm' | 'medium' | 'md' | 'high' | 'lg' | boolean | number | string;
+
+export interface CardStyleConfig {
+  radius?: CardRadiusPreset;
+  borderRadius?: CardRadiusPreset;
+  shadow?: CardShadowPreset;
+  elevation?: CardElevationPreset;
+  hoverElevation?: CardElevationPreset;
+  cardRadius?: CardRadiusPreset;
+  cardShadow?: CardShadowPreset;
+  cardElevation?: CardElevationPreset;
+  borderStyle?: "gradient" | "subtle" | "solid" | "none";
+  hoverEffect?: "spotlight" | "lift" | "glow" | "none";
+  [key: string]: any;
+}
+
+export type SectionTitleStyle =
+  | 'gradient'
+  | 'solid'
+  | 'glow'
+  | 'accent_bar'
+  | 'badge_header'
+  | 'flanked_lines'
+  | 'underlined';
+export type SectionTitleAlign = 'start' | 'center' | 'split';
+export type SectionTitleSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | (string & {});
+
+export type SectionAnimationType =
+  | 'fade_up'
+  | 'fade_in'
+  | 'zoom_in'
+  | 'slide_left'
+  | 'slide_right'
+  | 'none';
+
+export interface SectionAnimationConfig {
+  type?: SectionAnimationType;
+  duration?: number;
+  delay?: number;
+  threshold?: number;
+  once?: boolean;
+}
+
 export interface SectionBackgroundConfig {
   type?: 'theme_default' | 'solid' | 'gradient_linear' | 'mesh_glow' | 'subtle_tint' | 'contrast_break' | 'radial_spotlight';
   solidColor?: string;
@@ -252,6 +313,7 @@ export interface SectionBackgroundConfig {
   glowColor?: string;
   glowPosition?: 'top' | 'center' | 'bottom' | 'corners';
   hasPattern?: boolean;
+  pattern?: 'dots' | 'grid' | 'mesh' | 'none';
   dividerTop?: 'none' | 'glow_line' | 'gradient_fade';
   dividerBottom?: 'none' | 'glow_line' | 'gradient_fade';
 }
@@ -336,6 +398,16 @@ export interface FooterAdvancedConfig {
   backgroundStyle?: 'dark_mesh' | 'glass_blur' | 'solid' | 'brand_tinted';
 }
 
+export interface SelectedArticleItem {
+  title: string | LocalizedString;
+  imageUrl?: string;
+  linkUrl: string;
+  badge?: string | LocalizedString;
+  description?: string | LocalizedString;
+}
+
+export type SectionConfig = NonNullable<WebsiteSection['config']> & Record<string, any>;
+
 export interface WebsiteSection {
   id: string;
   type: string;
@@ -344,9 +416,12 @@ export interface WebsiteSection {
   description?: string | LocalizedString;
   subtitle?: string | LocalizedString;
   isActive?: boolean;
+  animation?: SectionAnimationConfig;
   config?: {
     // Section background rhythm engine
     background?: SectionBackgroundConfig;
+    // Section Scroll Animation Engine (Unified Default + Config Override)
+    animation?: SectionAnimationConfig;
     boxedLayout?: boolean;
     hasShadow?: boolean;
     // intro_slides: separate configs per appMode
@@ -358,13 +433,56 @@ export interface WebsiteSection {
     crossAxisCount?: 2 | 3 | 4;
     // blog posts
     limit?: number;
+    cardRadius?: CardRadiusPreset;
+    borderRadius?: CardRadiusPreset;
+    radius?: CardRadiusPreset;
+    cardShadow?: CardShadowPreset;
+    shadow?: CardShadowPreset;
+    cardElevation?: CardElevationPreset;
+    elevation?: CardElevationPreset;
+    cardStyle?: CardStyleConfig;
+    // Card Action Button Styling (Text vs Material)
+    cardButtonType?: 'text' | 'material' | 'outline' | 'none';
+    cardButtonText?: string | LocalizedString;
+    cardButtonAlign?: 'start' | 'center' | 'end' | 'full';
+    showCardButton?: boolean;
+    showViewAll?: boolean;
+    showMoreButton?: boolean;
+    // Section Header Typography & Formatting
+    titleStyle?: SectionTitleStyle;
+    titleAlign?: SectionTitleAlign;
+    titleSize?: SectionTitleSize;
+    titleColor?: string;
+    subtitleColor?: string;
+    badgeText?: string | LocalizedString;
+    badgeColor?: string;
+    badgeBg?: string;
     // banner / generic
     title?: string | LocalizedString;
     description?: string | LocalizedString;
     buttonText?: string | LocalizedString;
     buttonLink?: string;
     backgroundColor?: string;
-    margin?: number;
+    margin?: number | string;
+    marginBottom?: number | string;
+    marginTop?: number | string;
+    hasMargin?: boolean;
+    // Section Width & Container Sizing
+    sectionWidth?: "container" | "narrow" | "full" | "custom";
+    maxWidth?: number | string;
+    // Horizontal Spacing & Margin
+    marginX?: number | string;
+    marginHorizontal?: number | string;
+    marginLeft?: number | string;
+    marginRight?: number | string;
+    hasMarginX?: boolean;
+    hasHorizontalMargin?: boolean;
+    fullWidth?: boolean;
+    paddingX?: number | string;
+    paddingHorizontal?: number | string;
+    paddingLeft?: number | string;
+    paddingRight?: number | string;
+    paddingY?: number | string;
     fullScreen?: boolean;
     imageCount?: number;
     imageUrl?: string;
@@ -380,6 +498,10 @@ export interface WebsiteSection {
     cards?: any[];
     industries?: any[];
     categories?: any[];
+    // Ultra-Modern 2026 Visual Effects
+    mobileDisplayMode?: "carousel" | "grid";
+    buttonEffect?: "shimmer" | "glow" | "pulse" | "none";
+    floatingMockup?: boolean;
     [key: string]: any;
   };
 }
@@ -395,19 +517,19 @@ export interface WebsiteConfig {
   appMode?: AppMode;
   themePreset?: ThemePreset;
   logoStyle?: LogoStyle;
+  fontFamily?: 'alexandria' | 'ibm_plex' | 'readex' | 'cairo' | 'outfit';
+  backgroundPattern?: 'dots' | 'grid' | 'mesh' | 'none';
+  buttonEffect?: 'shimmer' | 'glow' | 'pulse' | 'none';
+  navbarShowTitle?: boolean;
+  showTitle?: boolean;
+  appTitle?: string;
   navbarOrder?: string[];
   sections?: WebsiteSection[];
   orderSettings?: OrderSettings;
   navbarAdvanced?: NavbarAdvancedConfig;
   footerAdvanced?: FooterAdvancedConfig;
-  footer?: {
-    description?: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    trustBadge?: string;
-    copyright?: string;
-  };
+  footerLogoUrl?: string;
+  footer?: FooterConfig;
   socialMedia?: {
     facebook?: string;
     telegram?: string;

@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
+import { SectionConfig } from "@/types";
 import styles from "./StoreComponents.module.css";
 
 interface TabItem {
@@ -31,9 +33,10 @@ interface TabsShowcaseProps {
   tabs?: Tab[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: SectionConfig;
 }
 
-export default function TabsShowcase({ tabs, title, description }: TabsShowcaseProps) {
+export default function TabsShowcase({ tabs, title, description, config }: TabsShowcaseProps) {
   const { lang } = useApp();
   const [activeTab, setActiveTab] = useState(0);
 
@@ -59,12 +62,7 @@ export default function TabsShowcase({ tabs, title, description }: TabsShowcaseP
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader title={titleText} description={descText} config={config} />
 
       <div className={styles.tabsShowcaseWrapper}>
         <div className={styles.tabButtons}>

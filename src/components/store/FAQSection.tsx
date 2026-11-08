@@ -4,27 +4,28 @@ import React from "react";
 import { useApp } from "@/context/AppContext";
 import { mockFaqs } from "@/data/mockData";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./StoreComponents.module.css";
 
 interface FAQSectionProps {
   items?: any[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: any;
 }
 
-export default function FAQSection({ items, title, description }: FAQSectionProps) {
+export default function FAQSection({ items, title, description, config }: FAQSectionProps) {
   const { lang } = useApp();
   const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
   const list = items && items.length > 0 ? items : mockFaqs;
 
   return (
     <section className={`${styles.faqSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
       <div className={styles.faqList}>
         {list.map((faq, index) => {
           const questionStr = resolveLocalizedText(faq.question || faq.title, lang);

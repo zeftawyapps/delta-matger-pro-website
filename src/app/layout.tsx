@@ -1,12 +1,24 @@
 import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
 import { ReactNode } from "react";
+import type { Viewport } from "next";
 import clientConfig from "@/config/clientConfig.json";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata = {
   title: clientConfig.appTitle || "MatgerPro - Multi-template Hub",
   description: (clientConfig as any)?.appDescription || (clientConfig as any)?.seo?.appDescription || "Next.js templates for premium Blogs and e-commerce Stores with interactive translations and native dark mode.",
   keywords: (clientConfig as any)?.keywords || (clientConfig as any)?.seo?.keywords || "متجر, تسوق, إلكتروني",
+  icons: {
+    icon: (clientConfig as any)?.logoUrl || "/favicon.ico",
+    shortcut: (clientConfig as any)?.logoUrl || "/favicon.ico",
+    apple: (clientConfig as any)?.logoUrl || "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

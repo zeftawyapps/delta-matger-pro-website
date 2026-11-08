@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./StoreComponents.module.css";
 
 interface PricingPlan {
@@ -19,6 +20,7 @@ interface PricingSectionProps {
   title?: string;
   description?: string;
   displayMode?: string;
+  config?: any;
 }
 
 export default function PricingSection({
@@ -26,6 +28,7 @@ export default function PricingSection({
   title,
   description,
   displayMode,
+  config,
 }: PricingSectionProps) {
   const { lang } = useApp();
 
@@ -42,12 +45,11 @@ export default function PricingSection({
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {(title || description) && (
-        <div className={styles.landingSectionHeader}>
-          {title && <h2 className={styles.sectionTitle}>{title}</h2>}
-          {description && <p className={styles.sectionSubtitle}>{description}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={title}
+        subtitle={description}
+        config={config}
+      />
 
       <div
         className={isHorizontalList ? styles.pricingHorizontalList : styles.pricingGrid}

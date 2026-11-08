@@ -659,7 +659,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setOrganizationPolicy(null);
   };
 
-  const appTitle = config?.visual?.appTitle || config?.appBranding?.appTitle || "Domancy";
+  const appTitle =
+    config?.layout?.appTitle ||
+    config?.website?.appTitle ||
+    config?.visual?.appTitle ||
+    config?.appBranding?.appTitle ||
+    "Domancy";
   const footerPages = posts.filter((p) => p.postType === "page" && p.showInFooter);
   const navPages = posts.filter((p) => p.postType === "page" && p.showInNavigation);
 

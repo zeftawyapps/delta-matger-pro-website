@@ -42,6 +42,9 @@ export default function FeaturedPost({ post }: FeaturedPostProps) {
   const authorName = (post as any).author?.name?.[lang] || (post as any).author?.name || (lang === "ar" ? "الكاتب" : "Author");
   const authorAvatar = (post as any).author?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
+  const rawSlug = typeof post.slug === "string" ? post.slug : ((post.slug as any)?.ar || (post.slug as any)?.en || post.id || "");
+  const postSlug = (rawSlug || "").trim().replace(/^\/+/, "");
+
   return (
     <section id="featured" className={`${styles.featuredSection} animateFadeUp`}>
       <div className={`${styles.featuredCard} glassCard`}>
@@ -74,7 +77,7 @@ export default function FeaturedPost({ post }: FeaturedPostProps) {
           <p className={styles.description}>{fallbackDesc}</p>
           
           <div className={styles.cardFooter}>
-            <Link href={`/blog/${post.slug}`} className="glowButton">
+            <Link href={`/blog/${postSlug}`} className="glowButton">
               {t.readMore}
             </Link>
           </div>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import storeStyles from "../store/StoreComponents.module.css";
 import styles from "./Sections.module.css";
 
@@ -33,12 +34,11 @@ export default function PricingSaasSlider({
 
   return (
     <section className={`${styles.sectionContainer} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.sectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
 
       <div className={styles.periodToggleRow}>
         <div className={styles.periodTogglePill}>

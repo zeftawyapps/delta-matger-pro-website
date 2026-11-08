@@ -4,8 +4,8 @@
 activeClient: "tantest"
 activeOrg: "default"
 
-appVersion: "1.7.5"
-appBuildIndex: 15
+appVersion: "1.8.4"
+appBuildIndex: 16
 
 # 🌍 Active environment (local, dev, prod)
 env: "prod"

@@ -3,6 +3,8 @@
 import React from "react";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
+import { SectionConfig } from "@/types";
 import styles from "./StoreComponents.module.css";
 
 interface CategoryGridProps {
@@ -10,6 +12,7 @@ interface CategoryGridProps {
   onSelectCategory: (category: string) => void;
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: SectionConfig;
   variant?: string;
 }
 
@@ -18,6 +21,7 @@ export default function CategoryGrid({
   onSelectCategory,
   title,
   description,
+  config,
   variant = "glass_card",
 }: CategoryGridProps) {
   const { lang, productCategories } = useApp();
@@ -57,14 +61,7 @@ export default function CategoryGrid({
 
   return (
     <section className={`${styles.categorySection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.sectionHeader}>
-          <div className={styles.titleArea}>
-            {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-            {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-          </div>
-        </div>
-      )}
+      <SectionHeader title={titleText} description={descText} config={config} />
 
       {/* Horizontal scrollable categories list */}
       <div className={styles.categoryHorizontalList}>

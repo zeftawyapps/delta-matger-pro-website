@@ -3,6 +3,7 @@
 import React from "react";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./Sections.module.css";
 
 interface PainPointAgitationProps {
@@ -36,31 +37,12 @@ export default function PainPointAgitation({
 
   return (
     <section className={`${styles.sectionContainer} animateFadeUp`}>
-      {(hasHeader || badgeText) && (
-        <div className={styles.sectionHeader}>
-          {badgeText && (
-            <span
-              className={styles.trustedBadge}
-              style={{
-                background: "rgba(239, 68, 68, 0.12)",
-                color: "#ef4444",
-                borderColor: "rgba(239, 68, 68, 0.3)",
-              }}
-            >
-              ⚠️ {badgeText}
-            </span>
-          )}
-          {titleText && (
-            <h2 className={styles.sectionTitle}>
-              {titleText}{" "}
-              {highlightAlertWord && (
-                <span className={styles.alertHighlight}>{highlightAlertWord}</span>
-              )}
-            </h2>
-          )}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        badge={badgeText}
+        config={config}
+      />
 
       <div className={styles.painGrid}>
         {cards.map((card: any, idx: number) => {

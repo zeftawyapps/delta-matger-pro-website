@@ -36,8 +36,28 @@ export default function HighImpactCtaBanner({
             : undefined
         }
       >
-        {headline && <h2>{headline}</h2>}
-        {subheadline && <p>{subheadline}</p>}
+        {headline && (
+          <h2
+            style={{
+              color: config.titleColor || undefined,
+              textAlign: config.titleAlign || undefined,
+              fontSize: config.titleSize === "xl" ? "clamp(2.2rem, 1.8rem + 2vw, 3.5rem)" : undefined,
+            }}
+          >
+            {headline}
+          </h2>
+        )}
+        {subheadline && (
+          <p
+            style={{
+              color: config.subtitleColor || undefined,
+              textAlign: config.titleAlign || undefined,
+              opacity: config.subtitleColor ? 1 : undefined,
+            }}
+          >
+            {subheadline}
+          </p>
+        )}
         {buttonText && (
           <Link href={buttonLink} className={styles.ctaWhiteButton}>
             <span>{buttonText}</span>

@@ -2,14 +2,19 @@
 
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { api } from "@/services/api";
+import clientConfig from "@/config/clientConfig.json";
+import SectionHeader from "@/components/common/SectionHeader";
+import { SectionConfig } from "@/types";
 import styles from "./StoreComponents.module.css";
 
-interface ContactConfig {
+interface ContactConfig extends SectionConfig {
   phone?: string;
   email?: string;
   address?: string;
   mapUrl?: string;
   showForm?: boolean;
+  formType?: string;
 }
 
 interface ContactUsProps {
@@ -19,9 +24,11 @@ interface ContactUsProps {
 }
 
 export default function ContactUs({ config, title, description }: ContactUsProps) {
-  const { lang } = useApp();
+  const { lang, config: orgConfig, authToken } = useApp();
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const phone = config?.phone || "";
   const email = config?.email || "";
@@ -29,19 +36,40 @@ export default function ContactUs({ config, title, description }: ContactUsProps
   const mapUrl = config?.mapUrl || "";
   const showForm = config?.showForm !== false;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setErrorMsg("");
+    setLoading(true);
+
+    try {
+      const orgId = orgConfig?.id || clientConfig.defaultOrgName || "default";
+      await api.submitFeedback(
+        orgId,
+        {
+          name: formData.name.trim(),
+          contact: formData.email.trim(),
+          type: config?.formType || "inquiry",
+          message: formData.message.trim(),
+        },
+        authToken || undefined
+      );
+      setSubmitted(true);
+      setFormData({ name: "", email: "", message: "" });
+    } catch (err: any) {
+      console.error("Failed to submit contact message to feedback", err);
+      setErrorMsg(
+        lang === "ar"
+          ? "حدث خطأ أثناء إرسال الرسالة، يرجى المحاولة مرة أخرى لاحقاً."
+          : "Failed to send message. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {(title || description) && (
-        <div className={styles.landingSectionHeader}>
-          {title && <h2 className={styles.sectionTitle}>{title}</h2>}
-          {description && <p className={styles.sectionSubtitle}>{description}</p>}
-        </div>
-      )}
+      <SectionHeader title={title} description={description} config={config} />
 
       <div className={styles.contactGrid}>
         <div className={`${styles.contactInfo} glassCard`}>
@@ -93,6 +121,7 @@ export default function ContactUs({ config, title, description }: ContactUsProps
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
+                  disabled={loading}
                   className={styles.contactInput}
                 />
                 <input
@@ -101,6 +130,7 @@ export default function ContactUs({ config, title, description }: ContactUsProps
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  disabled={loading}
                   className={styles.contactInput}
                 />
                 <textarea
@@ -108,11 +138,23 @@ export default function ContactUs({ config, title, description }: ContactUsProps
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   required
+                  disabled={loading}
                   rows={5}
                   className={styles.contactTextarea}
                 />
-                <button type="submit" className="glowButton">
-                  {lang === "ar" ? "إرسال" : "Send"}
+                {errorMsg && (
+                  <p className="inlineErrorBanner" style={{ margin: "0.25rem 0" }}>
+                    ⚠️ {errorMsg}
+                  </p>
+                )}
+                <button type="submit" disabled={loading} className="glowButton">
+                  {loading
+                    ? lang === "ar"
+                      ? "جاري الإرسال..."
+                      : "Sending..."
+                    : lang === "ar"
+                    ? "إرسال"
+                    : "Send"}
                 </button>
               </>
             )}

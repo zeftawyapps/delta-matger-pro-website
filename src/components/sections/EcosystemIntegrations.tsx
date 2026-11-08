@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./Sections.module.css";
 
 interface EcosystemIntegrationsProps {
@@ -44,12 +45,11 @@ export default function EcosystemIntegrations({
 
   return (
     <section className={`${styles.sectionContainer} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.sectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
 
       {categories.length > 1 && (
         <div className={styles.screensTabsBar}>

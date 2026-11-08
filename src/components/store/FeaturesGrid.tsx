@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { getSectionHeaderTexts, resolveLocalizedText } from "@/utils/sectionHelpers";
+import SectionHeader from "@/components/common/SectionHeader";
 import styles from "./StoreComponents.module.css";
 
 interface FeatureItem {
@@ -21,9 +22,10 @@ interface FeaturesGridProps {
   items?: FeatureItem[];
   title?: string | Record<string, string>;
   description?: string | Record<string, string>;
+  config?: any;
 }
 
-export default function FeaturesGrid({ items, title, description }: FeaturesGridProps) {
+export default function FeaturesGrid({ items, title, description, config }: FeaturesGridProps) {
   const { lang } = useApp();
 
   const { titleText, descText, hasHeader } = getSectionHeaderTexts({ title, description }, lang);
@@ -49,13 +51,12 @@ export default function FeaturesGrid({ items, title, description }: FeaturesGrid
 
   return (
     <section className={`${styles.landingSection} animateFadeUp`}>
-      {hasHeader && (
-        <div className={styles.landingSectionHeader}>
-          {titleText && <h2 className={styles.sectionTitle}>{titleText}</h2>}
-          {descText && <p className={styles.sectionSubtitle}>{descText}</p>}
-        </div>
-      )}
-      <div className={styles.featuresGrid}>
+      <SectionHeader
+        title={titleText}
+        subtitle={descText}
+        config={config}
+      />
+      <div className={`${styles.featuresGrid} ${config?.mobileDisplayMode === "carousel" ? styles.mobileCarousel : ""}`}>
         {displayItems.map((item, index) => {
           const href = getItemHref(item);
           const btnLabel = resolveLocalizedText(item.buttonText, lang);

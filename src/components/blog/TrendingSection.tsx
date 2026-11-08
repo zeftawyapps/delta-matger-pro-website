@@ -39,9 +39,12 @@ export default function TrendingSection({ posts }: TrendingSectionProps) {
           const categoryObj = categories.find((c) => c.id === post.blogCategoryId);
           const categoryName = categoryObj ? (categoryObj.name?.[lang as any] || categoryObj.name?.ar || "") : "";
 
+          const rawSlug = typeof post.slug === "string" ? post.slug : ((post.slug as any)?.ar || (post.slug as any)?.en || post.id || "");
+          const postSlug = (rawSlug || "").trim().replace(/^\/+/, "");
+
           return (
             <Link
-              href={`/blog/${post.slug}`}
+              href={`/blog/${postSlug}`}
               key={`${post.id}-${index}`}
               className={`${styles.trendingCard} glassCard`}
             >
