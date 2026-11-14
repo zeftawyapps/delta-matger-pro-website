@@ -204,6 +204,11 @@ export interface Offer {
 }
 
 export type AppMode = 'blog' | 'store' | 'hybrid';
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
 export type LogoStyle = 'solid' | 'gradient';
 export type DisplayMode = 'horizontal_list' | 'horizontal' | 'grid' | 'slider' | 'slide' | 'list' | 'scroll';
 export type IntroDisplayStyle =

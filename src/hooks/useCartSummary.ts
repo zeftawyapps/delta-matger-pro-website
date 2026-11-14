@@ -1,14 +1,18 @@
 "use client";
 
 import { useMemo, useCallback } from "react";
-import { useApp } from "@/context/AppContext";
+import { useCartStore } from "@/stores/useCartStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 /**
  * Custom hook to compute cart summary, tier discounts (slices),
  * shipping fee (by governorate), VAT, and final total.
+ * Subscribes only to Cart and Auth policies via Zustand selectors.
  */
 export function useCartSummary() {
-  const { cart, organizationPolicy, profile } = useApp();
+  const cart = useCartStore((s) => s.cart);
+  const organizationPolicy = useAuthStore((s) => s.organizationPolicy);
+  const profile = useAuthStore((s) => s.profile);
 
   const cartCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
