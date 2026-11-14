@@ -116,3 +116,9 @@
 | 2026-11-05 10:27:55 | **DOMANSY** | `default` | 1.7.5 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-05 15:24:44 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-08 15:45:01 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-08 20:30:50 | **DOMANSY** | `default` | 1.7.5 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-08 20:39:47 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-08 21:20:15 | **DOMANSY** | `default` | 1.7.5 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-11 08:56:35 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-11 16:32:47 | **DOMANSY** | `default` | 1.7.5 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-14 14:53:05 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |

@@ -640,105 +640,109 @@ export default function Navbar() {
         {t.home}
       </Link>
 
-      {/* 1. Hybrid Mode: Show Home, Blog dropdown, and Store dropdown */}
+      {/* 1. Hybrid Mode: Show Home, Blog dropdown (if enabled), and Store dropdown (if enabled) */}
       {appMode === "hybrid" && (
         <>
-          <div className={styles.dropdownContainer}>
-            <div style={{ display: "inline-flex", alignItems: "center" }}>
-              <Link href="/blog" className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`} style={linkCustomStyle}>
-                {t.blog}
-              </Link>
-              {showBlogCats && categories.length > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
-                  }}
-                  className={styles.dropdownToggle}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
-                  aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
-                >
-                  ▾
-                </button>
+          {showBlogCats && (
+            <div className={styles.dropdownContainer}>
+              <div style={{ display: "inline-flex", alignItems: "center" }}>
+                <Link href="/blog" className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`} style={linkCustomStyle}>
+                  {t.blog}
+                </Link>
+                {categories.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
+                    }}
+                    className={styles.dropdownToggle}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                    aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
+                  >
+                    ▾
+                  </button>
+                )}
+              </div>
+              {categories.length > 0 && (
+                <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                  <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                    {lang === "ar" ? "كل المقالات" : "All Posts"}
+                  </Link>
+                  {categories.map((cat) => {
+                    const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                    return (
+                      <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                        {nameStr}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            {showBlogCats && categories.length > 0 && (
-              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                  {lang === "ar" ? "كل المقالات" : "All Posts"}
-                </Link>
-                {categories.map((cat) => {
-                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                  return (
-                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                      {nameStr}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          )}
 
-          <div className={styles.dropdownContainer}>
-            <div style={{ display: "inline-flex", alignItems: "center" }}>
-              <Link href="/store" className={`${styles.navLink} ${pathname.startsWith("/store") ? styles.active : ""}`} style={linkCustomStyle}>
-                {t.store}
-              </Link>
-              {showStoreCats && productCategories.length > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDesktopDropdownOpen(desktopDropdownOpen === "store" ? null : "store");
-                  }}
-                  className={styles.dropdownToggle}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
-                  aria-label={lang === "ar" ? "أقسام المتجر" : "Store categories"}
-                >
-                  ▾
-                </button>
+          {showStoreCats && (
+            <div className={styles.dropdownContainer}>
+              <div style={{ display: "inline-flex", alignItems: "center" }}>
+                <Link href="/store" className={`${styles.navLink} ${pathname.startsWith("/store") ? styles.active : ""}`} style={linkCustomStyle}>
+                  {t.store}
+                </Link>
+                {productCategories.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDesktopDropdownOpen(desktopDropdownOpen === "store" ? null : "store");
+                    }}
+                    className={styles.dropdownToggle}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                    aria-label={lang === "ar" ? "أقسام المتجر" : "Store categories"}
+                  >
+                    ▾
+                  </button>
+                )}
+              </div>
+              {productCategories.length > 0 && (
+                <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+                  <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                    {lang === "ar" ? "كل المنتجات" : "All Products"}
+                  </Link>
+                  {productCategories.map((cat) => {
+                    const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                    return (
+                      <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                        {nameStr}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
             </div>
-            {showStoreCats && productCategories.length > 0 && (
-              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                  {lang === "ar" ? "كل المنتجات" : "All Products"}
-                </Link>
-                {productCategories.map((cat) => {
-                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                  return (
-                    <Link key={cat.id} href={`/store?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                      {nameStr}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          )}
         </>
       )}
 
-      {/* 2. Store-only Mode: Show Home, 'Our Products' link, and 'Categories' dropdown */}
-      {appMode === "store" && (
+      {/* 2. Store-only Mode: Show Home, 'Our Products' link, and 'Categories' dropdown only if showStoreCats is enabled */}
+      {appMode === "store" && showStoreCats && (
         <>
           <Link href="/store" className={`${styles.navLink} ${pathname === "/store" ? styles.active : ""}`} style={linkCustomStyle}>
             {lang === "ar" ? "منتجاتنا" : "Our Products"}
           </Link>
 
-          <div className={styles.dropdownContainer}>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setDesktopDropdownOpen(desktopDropdownOpen === "store_cats" ? null : "store_cats");
-              }}
-              className={`${styles.navLink} ${styles.dropdownToggle} ${pathname.includes("category") ? styles.active : ""}`}
-              style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", ...linkCustomStyle }}
-            >
-              {lang === "ar" ? "الأقسام" : "Categories"} {productCategories.length > 0 && "▾"}
-            </button>
-            {productCategories.length > 0 && (
+          {productCategories.length > 0 && (
+            <div className={styles.dropdownContainer}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDesktopDropdownOpen(desktopDropdownOpen === "store_cats" ? null : "store_cats");
+                }}
+                className={`${styles.navLink} ${styles.dropdownToggle} ${pathname.includes("category") ? styles.active : ""}`}
+                style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", ...linkCustomStyle }}
+              >
+                {lang === "ar" ? "الأقسام" : "Categories"} ▾
+              </button>
               <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store_cats" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
                 <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
                   {lang === "ar" ? "كل المنتجات" : "All Products"}
@@ -752,85 +756,53 @@ export default function Navbar() {
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </>
       )}
 
-      {/* 3. Blog-only Mode: Show Blog link & Categories dropdown */}
-      {appMode === "blog" && (
-        <>
-          <div className={styles.dropdownContainer}>
-            <div style={{ display: "inline-flex", alignItems: "center" }}>
-              <Link
-                href="/blog"
-                className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`}
-                style={linkCustomStyle}
-              >
-                {t.blog}
-              </Link>
-              {categories.length > 0 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
-                  }}
-                  className={styles.dropdownToggle}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
-                  aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
-                >
-                  ▾
-                </button>
-              )}
-            </div>
+      {/* 3. Blog-only Mode: Show Blog link & Categories dropdown only if showBlogCats is enabled */}
+      {appMode === "blog" && showBlogCats && (
+        <div className={styles.dropdownContainer}>
+          <div style={{ display: "inline-flex", alignItems: "center" }}>
+            <Link
+              href="/blog"
+              className={`${styles.navLink} ${pathname.startsWith("/blog") ? styles.active : ""}`}
+              style={linkCustomStyle}
+            >
+              {t.blog}
+            </Link>
             {categories.length > 0 && (
-              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                  {lang === "ar" ? "كل المقالات" : "All Posts"}
-                </Link>
-                {categories.map((cat) => {
-                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                  return (
-                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                      {nameStr}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Dedicated "الأقسام" (Categories) dropdown in desktop navbar */}
-          {categories.length > 0 && (
-            <div className={styles.dropdownContainer}>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDesktopDropdownOpen(desktopDropdownOpen === "blog_cats" ? null : "blog_cats");
+                  setDesktopDropdownOpen(desktopDropdownOpen === "blog" ? null : "blog");
                 }}
-                className={`${styles.navLink} ${styles.dropdownToggle}`}
-                style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", ...linkCustomStyle }}
+                className={styles.dropdownToggle}
+                style={{ background: "transparent", border: "none", cursor: "pointer", font: "inherit", padding: "0 0.25rem", ...linkCustomStyle }}
+                aria-label={lang === "ar" ? "أقسام المدونة" : "Blog categories"}
               >
-                {lang === "ar" ? "الأقسام ▾" : "Categories ▾"}
+                ▾
               </button>
-              <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog_cats" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                  {lang === "ar" ? "كل المقالات" : "All Posts"}
-                </Link>
-                {categories.map((cat) => {
-                  const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                  return (
-                    <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
-                      {nameStr}
-                    </Link>
-                  );
-                })}
-              </div>
+            )}
+          </div>
+          {categories.length > 0 && (
+            <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
+              <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                {lang === "ar" ? "كل المقالات" : "All Posts"}
+              </Link>
+              {categories.map((cat) => {
+                const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                return (
+                  <Link key={cat.id} href={`/blog?category=${cat.id}`} className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                    {nameStr}
+                  </Link>
+                );
+              })}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {visiblePages.map((page) => {
@@ -1086,106 +1058,132 @@ export default function Navbar() {
                 <span>{t.home}</span>
               </Link>
 
-              {(appMode === "blog" || appMode === "hybrid") && (
-                <div className={styles.mobileNavAccordion}>
-                  <div
-                    className={styles.mobileNavAccordionHeader}
-                    onClick={() => setMobileBlogExpanded((prev) => !prev)}
-                  >
-                    <div className={styles.mobileNavAccordionTitle}>
-                      <span>📝</span>
-                      <span>{t.blog}</span>
-                    </div>
-                    {categories.length > 0 && (
+              {(appMode === "blog" || appMode === "hybrid") && showBlogCats && (
+                categories.length > 0 ? (
+                  <div className={styles.mobileNavAccordion}>
+                    <div
+                      className={styles.mobileNavAccordionHeader}
+                      onClick={() => setMobileBlogExpanded((prev) => !prev)}
+                    >
+                      <div className={styles.mobileNavAccordionTitle}>
+                        <span>📝</span>
+                        <span>{t.blog}</span>
+                      </div>
                       <span className={`${styles.accordionChevron} ${mobileBlogExpanded ? styles.chevronOpen : ""}`}>
                         {mobileBlogExpanded ? "▴" : "▾"}
                       </span>
+                    </div>
+                    {mobileBlogExpanded && (
+                      <div className={styles.mobileAccordionSubList}>
+                        <Link
+                          href="/blog"
+                          className={styles.mobileAccordionSubLink}
+                          style={linkCustomStyle}
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            setSidebarOpen(false);
+                          }}
+                        >
+                          ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
+                        </Link>
+                        {categories.map((cat) => {
+                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/blog?category=${cat.id}`}
+                              className={styles.mobileAccordionSubLink}
+                              style={linkCustomStyle}
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                setSidebarOpen(false);
+                              }}
+                            >
+                              📁 {nameStr}
+                            </Link>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  {mobileBlogExpanded && (
-                    <div className={styles.mobileAccordionSubList}>
-                      <Link
-                        href="/blog"
-                        className={styles.mobileAccordionSubLink}
-                        style={linkCustomStyle}
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setSidebarOpen(false);
-                        }}
-                      >
-                        ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
-                      </Link>
-                      {categories.map((cat) => {
-                        const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                        return (
-                          <Link
-                            key={cat.id}
-                            href={`/blog?category=${cat.id}`}
-                            className={styles.mobileAccordionSubLink}
-                            style={linkCustomStyle}
-                            onClick={() => {
-                              setMobileMenuOpen(false);
-                              setSidebarOpen(false);
-                            }}
-                          >
-                            📁 {nameStr}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <Link
+                    href="/blog"
+                    className={styles.mobileNavLink}
+                    style={linkCustomStyle}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <span>📝</span>
+                    <span>{t.blog}</span>
+                  </Link>
+                )
               )}
 
-              {(appMode === "store" || appMode === "hybrid") && (
-                <div className={styles.mobileNavAccordion}>
-                  <div
-                    className={styles.mobileNavAccordionHeader}
-                    onClick={() => setMobileStoreExpanded((prev) => !prev)}
-                  >
-                    <div className={styles.mobileNavAccordionTitle}>
-                      <span>🛍️</span>
-                      <span>{t.store}</span>
-                    </div>
-                    {productCategories.length > 0 && (
+              {(appMode === "store" || appMode === "hybrid") && showStoreCats && (
+                productCategories.length > 0 ? (
+                  <div className={styles.mobileNavAccordion}>
+                    <div
+                      className={styles.mobileNavAccordionHeader}
+                      onClick={() => setMobileStoreExpanded((prev) => !prev)}
+                    >
+                      <div className={styles.mobileNavAccordionTitle}>
+                        <span>🛍️</span>
+                        <span>{t.store}</span>
+                      </div>
                       <span className={`${styles.accordionChevron} ${mobileStoreExpanded ? styles.chevronOpen : ""}`}>
                         {mobileStoreExpanded ? "▴" : "▾"}
                       </span>
+                    </div>
+                    {mobileStoreExpanded && (
+                      <div className={styles.mobileAccordionSubList}>
+                        <Link
+                          href="/store"
+                          className={styles.mobileAccordionSubLink}
+                          style={linkCustomStyle}
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            setSidebarOpen(false);
+                          }}
+                        >
+                          ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
+                        </Link>
+                        {productCategories.map((cat) => {
+                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/store?category=${cat.id}`}
+                              className={styles.mobileAccordionSubLink}
+                              style={linkCustomStyle}
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                setSidebarOpen(false);
+                              }}
+                            >
+                              📦 {nameStr}
+                            </Link>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                  {mobileStoreExpanded && (
-                    <div className={styles.mobileAccordionSubList}>
-                      <Link
-                        href="/store"
-                        className={styles.mobileAccordionSubLink}
-                        style={linkCustomStyle}
-                        onClick={() => {
-                          setMobileMenuOpen(false);
-                          setSidebarOpen(false);
-                        }}
-                      >
-                        ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
-                      </Link>
-                      {productCategories.map((cat) => {
-                        const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                        return (
-                          <Link
-                            key={cat.id}
-                            href={`/store?category=${cat.id}`}
-                            className={styles.mobileAccordionSubLink}
-                            style={linkCustomStyle}
-                            onClick={() => {
-                              setMobileMenuOpen(false);
-                              setSidebarOpen(false);
-                            }}
-                          >
-                            📦 {nameStr}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <Link
+                    href="/store"
+                    className={styles.mobileNavLink}
+                    style={linkCustomStyle}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setSidebarOpen(false);
+                    }}
+                  >
+                    <span>🛍️</span>
+                    <span>{t.store}</span>
+                  </Link>
+                )
               )}
 
               {/* Dynamic Pages */}
@@ -1532,106 +1530,126 @@ export default function Navbar() {
                   <span>{t.home}</span>
                 </Link>
 
-                {(appMode === "store" || appMode === "hybrid") && (
-                  <div className={styles.mobileNavAccordion}>
-                    <div
-                      className={styles.mobileNavAccordionHeader}
-                      onClick={() => setMobileStoreExpanded((prev) => !prev)}
-                    >
-                      <div className={styles.mobileNavAccordionTitle}>
-                        <span>🛍️</span>
-                        <span>{t.store}</span>
-                      </div>
-                      {productCategories.length > 0 && (
+                {(appMode === "store" || appMode === "hybrid") && showStoreCats && (
+                  productCategories.length > 0 ? (
+                    <div className={styles.mobileNavAccordion}>
+                      <div
+                        className={styles.mobileNavAccordionHeader}
+                        onClick={() => setMobileStoreExpanded((prev) => !prev)}
+                      >
+                        <div className={styles.mobileNavAccordionTitle}>
+                          <span>🛍️</span>
+                          <span>{t.store}</span>
+                        </div>
                         <span className={`${styles.accordionChevron} ${mobileStoreExpanded ? styles.chevronOpen : ""}`}>
                           {mobileStoreExpanded ? "▴" : "▾"}
                         </span>
+                      </div>
+                      {mobileStoreExpanded && (
+                        <div className={styles.mobileAccordionSubList}>
+                          <Link
+                            href="/store"
+                            className={styles.mobileAccordionSubLink}
+                            style={linkCustomStyle}
+                            onClick={() => {
+                              setSidebarOpen(false);
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
+                          </Link>
+                          {productCategories.map((cat) => {
+                            const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                            return (
+                              <Link
+                                key={cat.id}
+                                href={`/store?category=${cat.id}`}
+                                className={styles.mobileAccordionSubLink}
+                                style={linkCustomStyle}
+                                onClick={() => {
+                                  setSidebarOpen(false);
+                                  setMobileMenuOpen(false);
+                                }}
+                              >
+                                📦 {nameStr}
+                              </Link>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    {mobileStoreExpanded && (
-                      <div className={styles.mobileAccordionSubList}>
-                        <Link
-                          href="/store"
-                          className={styles.mobileAccordionSubLink}
-                          style={linkCustomStyle}
-                          onClick={() => {
-                            setSidebarOpen(false);
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          ✦ {lang === "ar" ? "كل المنتجات" : "All Products"}
-                        </Link>
-                        {productCategories.map((cat) => {
-                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                          return (
-                            <Link
-                              key={cat.id}
-                              href={`/store?category=${cat.id}`}
-                              className={styles.mobileAccordionSubLink}
-                              style={linkCustomStyle}
-                              onClick={() => {
-                                setSidebarOpen(false);
-                                setMobileMenuOpen(false);
-                              }}
-                            >
-                              📦 {nameStr}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  ) : (
+                    <Link
+                      href="/store"
+                      className={`${styles.sidebarLink} ${pathname.startsWith("/store") ? styles.sidebarLinkActive : ""}`}
+                      style={linkCustomStyle}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span>🛍️</span>
+                      <span>{t.store}</span>
+                    </Link>
+                  )
                 )}
 
-                {(appMode === "blog" || appMode === "hybrid") && (
-                  <div className={styles.mobileNavAccordion}>
-                    <div
-                      className={styles.mobileNavAccordionHeader}
-                      onClick={() => setMobileBlogExpanded((prev) => !prev)}
-                    >
-                      <div className={styles.mobileNavAccordionTitle}>
-                        <span>📝</span>
-                        <span>{t.blog}</span>
-                      </div>
-                      {categories.length > 0 && (
+                {(appMode === "blog" || appMode === "hybrid") && showBlogCats && (
+                  showBlogCats && categories.length > 0 ? (
+                    <div className={styles.mobileNavAccordion}>
+                      <div
+                        className={styles.mobileNavAccordionHeader}
+                        onClick={() => setMobileBlogExpanded((prev) => !prev)}
+                      >
+                        <div className={styles.mobileNavAccordionTitle}>
+                          <span>📝</span>
+                          <span>{t.blog}</span>
+                        </div>
                         <span className={`${styles.accordionChevron} ${mobileBlogExpanded ? styles.chevronOpen : ""}`}>
                           {mobileBlogExpanded ? "▴" : "▾"}
                         </span>
+                      </div>
+                      {mobileBlogExpanded && (
+                        <div className={styles.mobileAccordionSubList}>
+                          <Link
+                            href="/blog"
+                            className={styles.mobileAccordionSubLink}
+                            style={linkCustomStyle}
+                            onClick={() => {
+                              setSidebarOpen(false);
+                              setMobileMenuOpen(false);
+                            }}
+                          >
+                            ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
+                          </Link>
+                          {categories.map((cat) => {
+                            const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
+                            return (
+                              <Link
+                                key={cat.id}
+                                href={`/blog?category=${cat.id}`}
+                                className={styles.mobileAccordionSubLink}
+                                style={linkCustomStyle}
+                                onClick={() => {
+                                  setSidebarOpen(false);
+                                  setMobileMenuOpen(false);
+                                }}
+                              >
+                                📁 {nameStr}
+                              </Link>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
-                    {mobileBlogExpanded && (
-                      <div className={styles.mobileAccordionSubList}>
-                        <Link
-                          href="/blog"
-                          className={styles.mobileAccordionSubLink}
-                          style={linkCustomStyle}
-                          onClick={() => {
-                            setSidebarOpen(false);
-                            setMobileMenuOpen(false);
-                          }}
-                        >
-                          ✦ {lang === "ar" ? "كل المقالات" : "All Posts"}
-                        </Link>
-                        {categories.map((cat) => {
-                          const nameStr = typeof cat.name === "string" ? cat.name : cat.name?.[lang] || cat.name?.ar || "";
-                          return (
-                            <Link
-                              key={cat.id}
-                              href={`/blog?category=${cat.id}`}
-                              className={styles.mobileAccordionSubLink}
-                              style={linkCustomStyle}
-                              onClick={() => {
-                                setSidebarOpen(false);
-                                setMobileMenuOpen(false);
-                              }}
-                            >
-                              📁 {nameStr}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                  ) : (
+                    <Link
+                      href="/blog"
+                      className={`${styles.sidebarLink} ${pathname.startsWith("/blog") ? styles.sidebarLinkActive : ""}`}
+                      style={linkCustomStyle}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span>📝</span>
+                      <span>{t.blog}</span>
+                    </Link>
+                  )
                 )}
 
                 {appMode === "hybrid" && (
@@ -1664,8 +1682,8 @@ export default function Navbar() {
                 })}
               </div>
 
-              {/* Store Categories (Show in sidebar if appMode is store or hybrid) */}
-              {(appMode === "store" || appMode === "hybrid") && productCategories.length > 0 && (
+              {/* Store Categories (Show in sidebar only if enabled and appMode is store or hybrid) */}
+              {showStoreCats && (appMode === "store" || appMode === "hybrid") && productCategories.length > 0 && (
                 <div className={styles.sidebarSection}>
                   <span className={styles.sidebarSectionTitle}>
                     {lang === "ar" ? "أقسام المتجر" : "Store Categories"}
@@ -1689,8 +1707,8 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Blog Categories (Show in sidebar if appMode is blog or hybrid) */}
-              {(appMode === "blog" || appMode === "hybrid") && categories.length > 0 && (
+              {/* Blog Categories (Show in sidebar only if enabled and appMode is blog or hybrid) */}
+              {showBlogCats && (appMode === "blog" || appMode === "hybrid") && categories.length > 0 && (
                 <div className={styles.sidebarSection}>
                   <span className={styles.sidebarSectionTitle}>
                     {lang === "ar" ? "أقسام المدونة" : "Blog Categories"}
