@@ -130,3 +130,4 @@ export default function OrdersHistoryModal({ isOpen, onClose }: OrdersHistoryMod
     </div>
   );
 }
+

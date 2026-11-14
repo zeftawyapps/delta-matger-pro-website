@@ -85,3 +85,4 @@ export function useCartSummary() {
     currency: organizationPolicy?.logistics?.currency,
   };
 }
+
