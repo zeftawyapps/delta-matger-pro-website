@@ -267,3 +267,4 @@ export function mapProductFromApi(raw: Record<string, any>): Product {
     additionalData,
   };
 }
+

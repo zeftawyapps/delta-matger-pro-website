@@ -22,3 +22,4 @@ export const locationsService = {
     return getResponseData(payload) || [];
   },
 };
+

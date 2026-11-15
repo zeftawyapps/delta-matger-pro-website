@@ -44,3 +44,4 @@ export const useCatalogStore = create<CatalogState>((set) => ({
   setOffers: (offers) => set({ offers }),
   setLoading: (loading) => set({ loading }),
 }));
+

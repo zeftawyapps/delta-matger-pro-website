@@ -325,3 +325,4 @@ export const FALLBACK_POSTS: BlogPost[] = [
 ];
 
 export const FALLBACK_PRODUCTS: Record<string, Product> = {};
+

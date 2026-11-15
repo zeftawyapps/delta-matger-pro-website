@@ -122,3 +122,4 @@
 | 2026-11-11 08:56:35 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-11 16:32:47 | **DOMANSY** | `default` | 1.7.5 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-14 14:53:05 | **TANTEST** | `default` | 1.7.5 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-15 09:55:51 | **UAT** | `default` | 1.7.5 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
