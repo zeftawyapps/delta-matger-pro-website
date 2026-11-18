@@ -135,7 +135,8 @@ export default function HeroSaasInteractive({
         .submitFeedback(orgId, {
           name: `Lead: ${userText}`,
           contact: userText,
-          type: "hero_quick_lead",
+          type: "inquiry",
+          subject: "طلب سريع من الواجهة الرئيسية",
           message: `طلب من الواجهة الرئيسية. البيانات/الرقم: ${userText}`,
         })
         .catch(() => {});

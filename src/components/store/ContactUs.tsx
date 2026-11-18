@@ -138,6 +138,7 @@ export default function ContactUs({ config, title, description }: ContactUsProps
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   required
+                  maxLength={2000}
                   disabled={loading}
                   rows={5}
                   className={styles.contactTextarea}

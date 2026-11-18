@@ -153,48 +153,17 @@ export default function IntroSlides({ config, displayMode, title, description }:
     const customTitle = resolveIntroLocalized(merged.fallbackTitle, lang);
     const customDesc = resolveIntroLocalized(merged.fallbackDescription, lang);
 
-    // Default slide when no intro content is configured (respects admin custom decorative text).
-    const defaults: Record<string, NormalizedSlide> = {
-      blog: {
+    // Respect empty text from admin: do not inject hardcoded fallback titles/descriptions.
+    return [
+      {
         id: "intro-default",
-        title:
-          customTitle ||
-          (lang === "ar"
-            ? "اكتشف الأفكار التي تلهمك وتنمي مهاراتك"
-            : "Discover Ideas That Inspire Your Journey"),
-        description:
-          customDesc ||
-          (lang === "ar"
-            ? "مقالات متخصصة يكتبها خبراء لمساعدتك على التفوق."
-            : "Insights and tutorials crafted by experts to help you excel."),
+        title: customTitle,
+        description: customDesc,
+        ...(appMode === "store"
+          ? { image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900" }
+          : {}),
       },
-      store: {
-        id: "intro-default",
-        title:
-          customTitle ||
-          (lang === "ar" ? "ارتقِ بتجربتك الرقمية اليوم" : "Elevate Your Digital Experience"),
-        description:
-          customDesc ||
-          (lang === "ar"
-            ? "اكتشف تشكيلتنا الحصرية بأحدث التقنيات وأفضل الأسعار."
-            : "Discover our exclusive lineup with the latest tech and best prices."),
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=900",
-      },
-      hybrid: {
-        id: "intro-default",
-        title:
-          customTitle ||
-          (lang === "ar"
-            ? "تسوق بذكاء واقرأ بشغف في مكان واحد"
-            : "Shop Smart & Read Passionately In One Place"),
-        description:
-          customDesc ||
-          (lang === "ar"
-            ? "أفضل المنتجات مع مقالات شيقة وأدلة تعليمية."
-            : "The finest products with captivating stories and guides."),
-      },
-    };
-    return [defaults[appMode] ?? defaults.blog];
+    ];
   }, [posts, products, lang, appMode, merged.slideSource, merged.contentSource, merged.fallbackTitle, merged.fallbackDescription]);
 
   const slideCount = slides.length;
@@ -271,8 +240,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 </div>
               )}
               <div className={styles.gridCardBody}>
-                <h2 className={styles.gridCardTitle} style={textStyle}>{slide.title}</h2>
-                <p className={styles.gridCardDesc} style={textStyle}>{slide.description}</p>
+                {slide.title && <h2 className={styles.gridCardTitle} style={textStyle}>{slide.title}</h2>}
+                {slide.description && <p className={styles.gridCardDesc} style={textStyle}>{slide.description}</p>}
               </div>
             </div>
           ))}
@@ -477,8 +446,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 {chrome.badge}
               </span>
             )}
-            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
-            <p style={descStyle}>{slide.description}</p>
+            {slide.title && <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>}
+            {slide.description && <p style={descStyle}>{slide.description}</p>}
             {chrome.showPrice && chrome.price != null && (
               <div className={styles.classicPriceRow}>
                 {chrome.originalPrice != null && (
@@ -548,8 +517,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
                     {chrome.badge}
                   </span>
                 )}
-                <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
-                <p style={descStyle}>{slide.description}</p>
+                {slide.title && <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>}
+                {slide.description && <p style={descStyle}>{slide.description}</p>}
                 {chrome.showPrice && chrome.price != null && (
                   <div className={styles.classicPriceRow}>
                     {chrome.originalPrice != null && (
@@ -604,8 +573,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
                   {chrome.badge}
                 </span>
               )}
-              <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
-              <p style={descStyle}>{slide.description}</p>
+              {slide.title && <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>}
+              {slide.description && <p style={descStyle}>{slide.description}</p>}
               {chrome.showPrice && chrome.price != null && (
                 <div className={styles.classicPriceRow}>
                   {chrome.originalPrice != null && (
@@ -678,12 +647,16 @@ export default function IntroSlides({ config, displayMode, title, description }:
                   {appMode === "store" ? `⚡ ${chrome.badge}` : chrome.badge}
                 </span>
               )}
-              <h1 className={titleClass} style={titleStyle}>
-                {slide.title}
-              </h1>
-              <p className={styles.classicDescription} style={descStyle}>
-                {slide.description}
-              </p>
+              {slide.title && (
+                <h1 className={titleClass} style={titleStyle}>
+                  {slide.title}
+                </h1>
+              )}
+              {slide.description && (
+                <p className={styles.classicDescription} style={descStyle}>
+                  {slide.description}
+                </p>
+              )}
               {chrome.showPrice && chrome.price != null && (
                 <div className={styles.classicPriceRow}>
                   {chrome.originalPrice != null && (
@@ -733,7 +706,26 @@ export default function IntroSlides({ config, displayMode, title, description }:
     default: {
       const chrome = getClassicHeroChrome(merged, appMode, lang, slide.image, slide);
       const bgImg = chrome.showImage ? (slide.image || chrome.imageUrl) : undefined;
-      const hasBgImage = Boolean(bgImg);
+      const rawOverlayOpacity = merged.overlayOpacity;
+      const overlayOpacity =
+        rawOverlayOpacity == null
+          ? 0.5
+          : rawOverlayOpacity > 1
+          ? Math.min(1, Math.max(0, rawOverlayOpacity / 100))
+          : Math.min(1, Math.max(0, rawOverlayOpacity));
+      const overlayColor = merged.overlayColor?.trim() || "#000000";
+      const topPct = Math.round(overlayOpacity * 0.85 * 100);
+      const midPct = Math.round(overlayOpacity * 100);
+      const botPct = Math.round(Math.min(1, overlayOpacity * 1.35) * 100);
+      const overlayBlur =
+        typeof merged.overlayBlur === "number" && merged.overlayBlur >= 0
+          ? Math.min(20, merged.overlayBlur)
+          : 1;
+      const overlayStyle: React.CSSProperties = {
+        background: `linear-gradient(180deg, color-mix(in srgb, ${overlayColor} ${topPct}%, transparent) 0%, color-mix(in srgb, ${overlayColor} ${midPct}%, transparent) 55%, color-mix(in srgb, ${overlayColor} ${botPct}%, transparent) 100%)`,
+        backdropFilter: overlayBlur > 0 ? `blur(${overlayBlur}px)` : "none",
+        WebkitBackdropFilter: overlayBlur > 0 ? `blur(${overlayBlur}px)` : "none",
+      };
 
       inner = (
         <div className={`${styles.appleWrapper} ${alignClass}`}>
@@ -746,7 +738,7 @@ export default function IntroSlides({ config, displayMode, title, description }:
           {bgImg && (
             <>
               <img src={bgImg} alt={slide.title} className={styles.appleBg} />
-              <div className={styles.appleOverlay} />
+              <div className={styles.appleOverlay} style={overlayStyle} />
             </>
           )}
           <div className={`${styles.appleContent} ${alignClass}`}>
@@ -755,8 +747,8 @@ export default function IntroSlides({ config, displayMode, title, description }:
                 {chrome.badge}
               </span>
             )}
-            <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>
-            <p style={descStyle}>{slide.description}</p>
+            {slide.title && <h1 className={titleClass} style={titleStyle}>{slide.title}</h1>}
+            {slide.description && <p style={descStyle}>{slide.description}</p>}
             {chrome.showPrice && chrome.price != null && (
               <div className={styles.classicPriceRow}>
                 {chrome.originalPrice != null && (

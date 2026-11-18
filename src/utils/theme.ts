@@ -1,4 +1,6 @@
-import { OrgConfig } from '../types';
+import { DesignLanguage, OrgConfig } from '../types';
+
+export const DEFAULT_DESIGN_LANGUAGE: DesignLanguage = 'glass';
 
 /**
  * Utility to parse Android/Flutter ARGB color strings (like "0xFFD4AF37")
@@ -35,9 +37,11 @@ export const formatColor = (colorStr?: string): string => {
 export const applyTheme = (
   themes?: OrgConfig['themes'],
   isDarkMode: boolean = false,
-  themePreset?: string
+  themePreset?: string,
+  designLanguage: DesignLanguage = DEFAULT_DESIGN_LANGUAGE
 ): void => {
   if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-design', designLanguage);
     if (themePreset) {
       document.documentElement.setAttribute('data-theme-preset', themePreset);
     } else {

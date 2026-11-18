@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AppContextProvider } from "@/context/AppContext";
+import { DEFAULT_DESIGN_LANGUAGE } from "@/utils/theme";
 import { ReactNode } from "react";
 import type { Viewport } from "next";
 import clientConfig from "@/config/clientConfig.json";
@@ -26,7 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppContextProvider>
-      <html lang="ar" dir="rtl" data-theme="light" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <html lang="ar" dir="rtl" data-theme="light" data-design={DEFAULT_DESIGN_LANGUAGE} data-scroll-behavior="smooth" suppressHydrationWarning>
         <head>
           <meta name="color-scheme" content="light dark" />
           <meta name="theme-color" content={themeColor} />
@@ -39,7 +40,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   try {
                     var savedTheme = localStorage.getItem('theme');
                     var savedLang = localStorage.getItem('lang') || 'ar';
+                    var savedDesign = localStorage.getItem('designLanguage') || '${DEFAULT_DESIGN_LANGUAGE}';
                     
+                    document.documentElement.setAttribute('data-design', savedDesign);
+
                     // Apply theme immediately
                     if (savedTheme) {
                       document.documentElement.setAttribute('data-theme', savedTheme);

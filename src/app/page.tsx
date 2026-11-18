@@ -102,6 +102,9 @@ function HomepageContent() {
       } else {
         setActiveStoreCategory(categoryParam);
       }
+    } else {
+      setActiveBlogCategory("all");
+      setActiveStoreCategory("all");
     }
   }, [categoryParam, appMode]);
 
@@ -773,6 +776,7 @@ function HomepageContent() {
           items={section.config?.items}
           title={titleText}
           description={descText}
+          config={sectionMergedConfig}
         />
       );
     }

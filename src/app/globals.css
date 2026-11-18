@@ -995,4 +995,100 @@ html[dir="rtl"] .customSelect {
   }
 }
 
+/* ============================================================================
+   Material Design 3 Layer (Default: data-design="material")
+   Keeps Glassmorphism 100% intact when data-design="glass" is active.
+   ============================================================================ */
+
+:root[data-design="material"] {
+  --color-bg-light: #faf8f3;
+  --color-bg-dark: #1a2332;
+  --color-fg-light: #1a2332;
+  --color-fg-dark: #faf8f3;
+
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #242f3f;
+  --color-surface-hover-light: #f5f0e8;
+  --color-surface-hover-dark: #2d3847;
+
+  --color-border-light: #e5dcc8;
+  --color-border-dark: #3d4a5c;
+
+  --surface-variant: var(--color-surface-variant, light-dark(#f5f0e8, #2d3847));
+  --divider: var(--color-divider, var(--border));
+
+  --md-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
+  --md-elevation-2: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --md-elevation-3: 0 10px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+}
+
+/* Material Cards (replaces translucent glass + gradient border with crisp solid surface + elevation) */
+:root[data-design="material"] .glassCard {
+  background: var(--surface) !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--divider) !important;
+  border-radius: var(--card-radius, var(--radius-md));
+  box-shadow: var(--md-elevation-1);
+  transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s ease;
+}
+
+:root[data-design="material"] .glassCard:hover {
+  background: var(--surface) !important;
+  background-image: none !important;
+  transform: translateY(-2px);
+  box-shadow: var(--md-elevation-2);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--divider)) !important;
+}
+
+/* Material Filled Buttons (replaces gradient glow + shimmer beam) */
+:root[data-design="material"] .glowButton {
+  background: var(--color-button-primary, var(--primary));
+  color: var(--color-button-text, var(--color-text-on-primary, #ffffff));
+  border-radius: var(--radius-sm);
+  box-shadow: var(--md-elevation-1);
+  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), transform 0.15s ease;
+}
+
+:root[data-design="material"] .glowButton::after {
+  display: none !important;
+}
+
+:root[data-design="material"] .glowButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--md-elevation-2);
+  filter: brightness(1.04);
+}
+
+:root[data-design="material"] .glowButton:active:not(:disabled) {
+  transform: scale(0.98);
+  box-shadow: var(--md-elevation-1);
+}
+
+/* Material Outlined TextFields & Selects */
+:root[data-design="material"] .customInput,
+:root[data-design="material"] .customSelect {
+  background-color: var(--color-input-background, var(--surface));
+  border: 1px solid var(--color-input-border, var(--divider));
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+:root[data-design="material"] .customInput:focus,
+:root[data-design="material"] .customSelect:focus {
+  border-color: var(--color-input-focus, var(--primary));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* Material Section Rhythm (subtle solid surfaceVariant alternation without ambient blur orbs) */
+:root[data-design="material"] .sectionRhythmWrapper {
+  border-bottom: 1px solid color-mix(in srgb, var(--divider) 55%, transparent);
+}
+
+
 

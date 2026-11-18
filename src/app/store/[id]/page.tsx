@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
+import ProductReviews from "@/components/store/ProductReviews";
 import { formatPrice } from "@/utils/currency";
 import { isHtml } from "@/utils/html";
 import { getFullImageUrl } from "@/services/api";
@@ -580,7 +581,7 @@ export default function ProductContent() {
           </div>
         </div>
 
-        {/* Detail Tabs (Description & Specifications only) */}
+        {/* Detail Tabs (Description, Specifications & Reviews) */}
         <div className={`${styles.tabsContainer} glassCard`}>
           <div className={styles.tabsHeader}>
             <button
@@ -594,6 +595,12 @@ export default function ProductContent() {
               className={`${styles.tabBtn} ${activeTab === "specs" ? styles.activeTabBtn : ""}`}
             >
               {t.specifications || (lang === "ar" ? "المواصفات" : "Specifications")}
+            </button>
+            <button
+              onClick={() => setActiveTab("reviews")}
+              className={`${styles.tabBtn} ${activeTab === "reviews" ? styles.activeTabBtn : ""}`}
+            >
+              {lang === "ar" ? "التقييمات" : "Reviews"}
             </button>
           </div>
 
@@ -636,6 +643,10 @@ export default function ProductContent() {
                   </p>
                 )}
               </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <ProductReviews productId={String(product.id)} />
             )}
           </div>
         </div>

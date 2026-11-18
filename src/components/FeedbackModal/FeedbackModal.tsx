@@ -135,11 +135,12 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className={styles.select}
+                  className="customInput customSelect"
                 >
                   <option value="suggestion">{isAr ? "مقترح تطوير" : "Suggestion"}</option>
                   <option value="complaint">{isAr ? "شكوى أو بلاغ" : "Complaint"}</option>
                   <option value="inquiry">{isAr ? "استفسار عام" : "Inquiry"}</option>
+                  <option value="general_feedback">{isAr ? "رأي / تقييم عام" : "General Feedback"}</option>
                 </select>
               </div>
 
@@ -150,6 +151,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 <textarea
                   required
                   rows={4}
+                  maxLength={2000}
                   placeholder={isAr ? "اكتب رسالتك بالتفصيل هنا..." : "Write your message here..."}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
