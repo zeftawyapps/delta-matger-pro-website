@@ -301,18 +301,102 @@ export const catalogService = {
     }
   },
 
+  getApprovedFeedback: async (
+    organizationId: string,
+    options?: { type?: string; limit?: number }
+  ): Promise<any[]> => {
+    try {
+      const params = new URLSearchParams({ status: "approved" });
+      if (options?.type && options.type !== "all") {
+        params.set("type", options.type);
+      }
+      const response = await fetch(
+        `${getBaseUrl()}/feedback/organization/${organizationId}?${params.toString()}`
+      );
+      if (!response.ok) return [];
+      const resData = await response.json();
+      const raw =
+        (Array.isArray(resData) && resData) ||
+        resData?.feedbacks ||
+        resData?.items ||
+        resData?.data ||
+        [];
+      const limit = options?.limit && options.limit > 0 ? options.limit : 10;
+      return raw
+        .filter((r: any) => r?.status === "approved" && (r?.isPublic !== false || options?.type !== "all"))
+        .slice(0, limit);
+    } catch {
+      return [];
+    }
+  },
+
   submitFeedback: async (
     organizationId: string,
-    payload: { name: string; contact: string; type: string; message: string },
+    payload: {
+      name?: string;
+      contact?: string;
+      userEmail?: string;
+      userPhone?: string;
+      subject?: string;
+      type: string;
+      message: string;
+      targetId?: string;
+      rating?: number;
+    },
     token?: string
   ): Promise<any> => {
-    const bodyPayload = {
+    const trimmedContact = payload.contact?.trim() || "";
+    const resolvedEmail =
+      payload.userEmail?.trim() ||
+      (trimmedContact.includes("@") ? trimmedContact : undefined);
+    const resolvedPhone =
+      payload.userPhone?.trim() ||
+      (trimmedContact && !trimmedContact.includes("@")
+        ? trimmedContact
+        : undefined);
+
+    const rawType = (payload.type || "").trim();
+    const allowedTypes = new Set([
+      "inquiry",
+      "general_inquiry",
+      "product_review",
+      "order_feedback",
+      "general_feedback",
+      "complaint",
+      "suggestion",
+    ]);
+    const normalizedType = allowedTypes.has(rawType)
+      ? rawType
+      : "general_feedback";
+
+    const bodyPayload: Record<string, any> = {
       organizationId,
-      type: payload.type || "suggestion",
-      userName: payload.name || undefined,
-      userEmail: payload.contact || undefined,
-      comment: payload.message || "",
+      type: normalizedType,
+      comment: (payload.message || "").trim().slice(0, 2000),
     };
+
+    if (payload.subject?.trim()) {
+      bodyPayload.subject = payload.subject.trim().slice(0, 200);
+    }
+    if (payload.name?.trim()) {
+      bodyPayload.userName = payload.name.trim();
+    }
+    if (resolvedPhone) {
+      bodyPayload.userPhone = resolvedPhone.slice(0, 50);
+    }
+    if (resolvedEmail) {
+      bodyPayload.userEmail = resolvedEmail;
+    }
+    if (payload.targetId?.trim()) {
+      bodyPayload.targetId = payload.targetId.trim();
+    }
+    if (
+      typeof payload.rating === "number" &&
+      payload.rating >= 1 &&
+      payload.rating <= 5
+    ) {
+      bodyPayload.rating = payload.rating;
+    }
 
     const payloadRes = await requestJson("/feedback/submit", {
       method: "POST",
@@ -321,6 +405,27 @@ export const catalogService = {
     });
 
     return getResponseData(payloadRes);
+  },
+
+  /**
+   * Fetch approved public reviews for a product/service.
+   */
+  getProductFeedback: async (productId: string): Promise<any[]> => {
+    if (!productId) return [];
+    try {
+      const payloadRes = await requestJson(
+        `/feedback/product/${encodeURIComponent(productId)}`,
+        { method: "GET" }
+      );
+      const data = getResponseData(payloadRes);
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.reviews)) return data.reviews;
+      return [];
+    } catch (error) {
+      console.warn("Failed to fetch product reviews:", error);
+      return [];
+    }
   },
 
   subscribeNewsletter: async (args: {
@@ -357,10 +462,11 @@ export const catalogService = {
           token: args.token,
           body: JSON.stringify({
             organizationId: args.organizationId,
-            type: "newsletter_subscription",
+            type: "general_feedback",
+            subject: "Newsletter Subscription",
             userName: "Newsletter Subscriber",
             userEmail: args.email.trim(),
-            comment: JSON.stringify(bodyPayload),
+            comment: JSON.stringify(bodyPayload).slice(0, 2000),
           }),
         });
         return getResponseData(fallbackRes);

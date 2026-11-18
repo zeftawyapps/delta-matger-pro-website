@@ -23,12 +23,13 @@ interface AuthState {
   ) => Promise<void>;
   loginWithPhone: (
     phone: string,
-    name?: string,
+    password: string,
     orgId?: string
   ) => Promise<void>;
   signupWithPhone: (
     name: string,
     phone: string,
+    password: string,
     orgId?: string
   ) => Promise<void>;
   logout: () => void;
@@ -81,7 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   loginWithCredentials: async (emailOrUsername, password, orgId) => {
-    const auth = await authService.login(emailOrUsername, password);
+    const auth = await authService.login(emailOrUsername, password, orgId);
     authService.setStoredToken(auth.token);
     set({ authToken: auth.token, currentUser: auth.user });
 
@@ -101,10 +102,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  loginWithPhone: async (phone, name, orgId) => {
-    const auth = await authService.quickLoginByPhone({
+  loginWithPhone: async (phone, password, orgId) => {
+    const auth = await authService.loginByPhone({
       phone,
-      name,
+      password,
       organizationId: orgId,
     });
     authService.setStoredToken(auth.token);
@@ -126,13 +127,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signupWithPhone: async (name, phone, orgId) => {
+  signupWithPhone: async (name, phone, password, orgId) => {
     await authService.signupCustomer({
       name,
       phone,
+      password,
       organizationId: orgId,
     });
-    await get().loginWithPhone(phone, name, orgId);
+    await get().loginWithPhone(phone, password, orgId);
   },
 
   logout: () => {

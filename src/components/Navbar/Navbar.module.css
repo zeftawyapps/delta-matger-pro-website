@@ -113,6 +113,36 @@
   gap: 1.5rem;
 }
 
+.containerCentered {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.navClusterStart {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  justify-self: start;
+  min-width: 0;
+}
+
+.navLogoCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+}
+
+.navClusterEnd {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  justify-self: end;
+  min-width: 0;
+}
+
 /* Logo styling */
 .logo {
   display: flex;

@@ -22,12 +22,15 @@ export function normalizePhone(rawPhone: string): string {
     .replace(/\D/g, "");
 }
 
-export function buildCustomerAuthFields(rawPhone: string) {
+export function buildCustomerAuthFields(rawPhone: string, orgId?: string) {
   const normalizedPhone = normalizePhone(rawPhone);
-  const username = `u${normalizedPhone}`;
-  const password = `U_s${normalizedPhone}`;
+  const orgSuffix =
+    orgId && orgId.length > 6 ? orgId.slice(-6) : orgId || "";
+  const username = orgSuffix
+    ? `u_${orgSuffix}_${normalizedPhone}`
+    : `u${normalizedPhone}`;
   const email = `${username}@shop.com`;
-  return { normalizedPhone, username, password, email };
+  return { normalizedPhone, username, email };
 }
 
 export const authService = {
@@ -50,11 +53,16 @@ export const authService = {
 
   login: async (
     emailOrUsername: string,
-    password: string
+    password: string,
+    organizationId?: string
   ): Promise<AuthPayload> => {
     const payload = await requestJson("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ emailOrUsername, password }),
+      body: JSON.stringify({
+        emailOrUsername,
+        password,
+        ...(organizationId ? { organizationId } : {}),
+      }),
     });
     const data = getResponseData(payload);
     const user = isObject(data?.user) ? data.user : data;
@@ -82,10 +90,13 @@ export const authService = {
   signupCustomer: async (args: {
     name: string;
     phone: string;
+    password: string;
     organizationId?: string;
   }) => {
-    const { normalizedPhone, username, password, email } =
-      buildCustomerAuthFields(args.phone);
+    const { normalizedPhone, username, email } = buildCustomerAuthFields(
+      args.phone,
+      args.organizationId
+    );
     const payload = await requestJson("/auth/signup", {
       method: "POST",
       body: JSON.stringify({
@@ -93,31 +104,26 @@ export const authService = {
         username,
         email,
         phone: normalizedPhone,
-        password,
+        password: args.password,
         role: "customer",
         roles: ["customer"],
-        organizationId: args.organizationId,
+        ...(args.organizationId ? { organizationId: args.organizationId } : {}),
       }),
     });
     return getResponseData(payload);
   },
 
-  quickLoginByPhone: async (args: {
+  loginByPhone: async (args: {
     phone: string;
-    name?: string;
+    password: string;
     organizationId?: string;
   }): Promise<AuthPayload> => {
-    const { username, password } = buildCustomerAuthFields(args.phone);
-    try {
-      return await authService.login(username, password);
-    } catch {
-      await authService.signupCustomer({
-        name: args.name || `Customer ${normalizePhone(args.phone).slice(-4) || ""}`,
-        phone: args.phone,
-        organizationId: args.organizationId,
-      });
-      return authService.login(username, password);
-    }
+    const normalizedPhone = normalizePhone(args.phone);
+    return authService.login(
+      normalizedPhone,
+      args.password,
+      args.organizationId
+    );
   },
 
   getMyProfile: async (token: string): Promise<UserProfile> => {

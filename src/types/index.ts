@@ -254,6 +254,10 @@ export interface IntroSlideConfig {
   useGradientTitle?: boolean;
   showHeroImage?: boolean;
   heroImageUrl?: string;
+  /** Image overlay controls (0..1 or 0..100 for opacity, hex/css color, blur px) */
+  overlayOpacity?: number;
+  overlayColor?: string;
+  overlayBlur?: number;
   showPrice?: boolean;
   price?: number;
   originalPrice?: number;
@@ -518,8 +522,11 @@ export interface OrderSettings {
   orderMode?: string;
 }
 
+export type DesignLanguage = 'material' | 'glass';
+
 export interface WebsiteConfig {
   appMode?: AppMode;
+  designLanguage?: DesignLanguage;
   themePreset?: ThemePreset;
   logoStyle?: LogoStyle;
   fontFamily?: 'alexandria' | 'ibm_plex' | 'readex' | 'cairo' | 'outfit';

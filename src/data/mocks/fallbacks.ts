@@ -231,7 +231,7 @@ export const FALLBACK_POSTS: BlogPost[] = [
     title: { ar: "من نحن", en: "About Us" },
     slug: "about",
     content: {
-      ar: `<p>متجر برو هو منصة رائدة في تقديم أفضل المنتجات التكنولوجية والإلكترونية مع محتوى معرفي غني من خلال مدونتنا المتخصصة لمساعدتك في اتخاذ قرارات الشراء الأنسب.</p>`,
+      ar: `<p>الشهابندر هو منصة رائدة في تقديم أفضل المنتجات التكنولوجية والإلكترونية مع محتوى معرفي غني من خلال مدونتنا المتخصصة لمساعدتك في اتخاذ قرارات الشراء الأنسب.</p>`,
       en: `<p>MatgerPro is a leading platform providing top-tier tech items alongside rich informational content through our dedicated blog to help you make informed purchase decisions.</p>`,
     },
     postType: "page",

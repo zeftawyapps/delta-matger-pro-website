@@ -367,7 +367,19 @@ def main():
     footer_cfg = target_org.get("footer", {}) if isinstance(target_org.get("footer"), dict) else {}
     policies_cfg = target_org.get("policies", {}) if isinstance(target_org.get("policies"), dict) else {}
 
-    app_version = client_config.get("appVersion", "1.0.0")
+    # Read authoritative appVersion from package.json so a single version change applies to all clients
+    package_json_path = os.path.join(project_root, "package.json")
+    pkg_version = None
+    if os.path.exists(package_json_path):
+        try:
+            with open(package_json_path, 'r', encoding='utf-8') as f:
+                pkg_data = json.load(f)
+                if pkg_data.get("version"):
+                    pkg_version = str(pkg_data["version"]).strip()
+        except Exception as e:
+            print(f"  ⚠️ Warning: Could not read package.json version: {e}")
+
+    app_version = pkg_version or client_config.get("appVersion", "1.0.0")
     appBuildIndex = client_config.get("appBuildIndex", "1")
     enable_demo_mock_data = client_config.get("enableDemoMockData", False)
 
@@ -533,18 +545,8 @@ def main():
     print(f"  📝 Generated clientConfig.json at src/config/")
 
     # ------------------------------------------------------------------
-    # 6. Update package.json version
+    # 6. Version is sourced from package.json (no overwrite needed)
     # ------------------------------------------------------------------
-    package_json_path = os.path.join(project_root, "package.json")
-    if os.path.exists(package_json_path):
-        try:
-            with open(package_json_path, 'r', encoding='utf-8') as f:
-                pkg_data = json.load(f)
-            pkg_data["version"] = str(app_version)
-            with open(package_json_path, 'w', encoding='utf-8') as f:
-                json.dump(pkg_data, f, indent=2)
-        except Exception as e:
-            print(f"  ⚠️ Warning: Could not update package.json version: {e}")
 
     # ------------------------------------------------------------------
     # 7. Rewrite project_builder/config.yaml activeClient & activeOrg

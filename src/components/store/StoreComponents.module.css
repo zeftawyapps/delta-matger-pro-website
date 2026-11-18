@@ -295,10 +295,20 @@
   }
 }
 
-@media (max-width: 480px) {
-  .productsGrid:not(.mobileCarousel) {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+@media (max-width: 499px) {
+  .productsGrid,
+  .productsGrid:not(.mobileCarousel),
+  .productsGrid.mobileCarousel {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+    overflow-x: visible !important;
+    padding-inline: 0 !important;
+  }
+
+  .productsGrid.mobileCarousel > * {
+    flex: unset !important;
+    max-width: 100% !important;
   }
 }
 
@@ -759,56 +769,63 @@
   transition: var(--transition-smooth);
 }
 
-.faqItem[open] {
+.faqItemOpen {
   border-color: var(--secondary);
 }
 
 .faqSummary {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
   padding: 1.25rem 1.5rem;
   font-weight: 600;
   font-size: 1.05rem;
   cursor: pointer;
-  list-style: none; /* Hide summary marker */
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.faqSummary::-webkit-details-marker {
-  display: none; /* Hide Chrome summary marker */
+  gap: 1rem;
 }
 
 .faqIcon {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--secondary);
-  transition: transform 0.3s ease;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.faqItem[open] .faqIcon {
+.faqItemOpen .faqIcon {
   transform: rotate(45deg);
 }
 
-.faqAnswer {
-  padding: 0 1.5rem 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  opacity: 0.8;
-  border-top: 1px solid var(--border);
-  margin-top: 0.25rem;
-  padding-top: 1rem;
-  animation: faqReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.faqAnswerWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease;
 }
 
-@keyframes faqReveal {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.faqItemOpen .faqAnswerWrapper {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.faqAnswerInner {
+  overflow: hidden;
+}
+
+.faqAnswer {
+  padding: 1rem 1.5rem 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  opacity: 0.85;
+  border-top: 1px solid var(--border);
 }
 
 /* 7. Trust Badges */

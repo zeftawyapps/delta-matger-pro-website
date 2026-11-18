@@ -4,7 +4,7 @@ import React, { useEffect, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/services/api";
 import clientConfig from "@/config/clientConfig.json";
-import { applyTheme } from "@/utils/theme";
+import { applyTheme, DEFAULT_DESIGN_LANGUAGE } from "@/utils/theme";
 import { initCampaignTracker } from "@/utils/campaignTracker";
 import { translations, TranslationSet } from "@/constants/translations";
 import {
@@ -185,7 +185,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // Apply dynamic theme CSS variables
   useEffect(() => {
     if (config?.themes) {
-      applyTheme(config.themes, theme === "dark", config.website?.themePreset);
+      applyTheme(
+        config.themes,
+        theme === "dark",
+        config.website?.themePreset,
+        config.website?.designLanguage || DEFAULT_DESIGN_LANGUAGE
+      );
     }
   }, [config, theme]);
 
@@ -254,10 +259,10 @@ export function useApp() {
 
     loginWithCredentials: (emailOrUsername: string, password: string) =>
       auth.loginWithCredentials(emailOrUsername, password, catalog.config?.id),
-    loginWithPhone: (phone: string, name?: string) =>
-      auth.loginWithPhone(phone, name, catalog.config?.id),
-    signupWithPhone: (name: string, phone: string) =>
-      auth.signupWithPhone(name, phone, catalog.config?.id),
+    loginWithPhone: (phone: string, password: string) =>
+      auth.loginWithPhone(phone, password, catalog.config?.id),
+    signupWithPhone: (name: string, phone: string, password: string) =>
+      auth.signupWithPhone(name, phone, password, catalog.config?.id),
     logout: auth.logout,
     refreshProfile: auth.refreshProfile,
     updateProfile: auth.updateProfile,

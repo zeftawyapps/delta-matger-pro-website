@@ -254,7 +254,15 @@ export default function Navbar() {
               </div>
               {categories.length > 0 && (
                 <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                  <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  <Link
+                    href="/blog"
+                    className={styles.dropdownItem}
+                    style={linkCustomStyle}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setDesktopDropdownOpen(null);
+                    }}
+                  >
                     {lang === "ar" ? "كل المقالات" : "All Posts"}
                   </Link>
                   {categories.map((cat) => {
@@ -293,7 +301,15 @@ export default function Navbar() {
               </div>
               {productCategories.length > 0 && (
                 <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                  <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                  <Link
+                    href="/store"
+                    className={styles.dropdownItem}
+                    style={linkCustomStyle}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setDesktopDropdownOpen(null);
+                    }}
+                  >
                     {lang === "ar" ? "كل المنتجات" : "All Products"}
                   </Link>
                   {productCategories.map((cat) => {
@@ -332,7 +348,15 @@ export default function Navbar() {
                 {lang === "ar" ? "الأقسام" : "Categories"} ▾
               </button>
               <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "store_cats" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-                <Link href="/store" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+                <Link
+                  href="/store"
+                  className={styles.dropdownItem}
+                  style={linkCustomStyle}
+                  onClick={() => {
+                    setSearchQuery("");
+                    setDesktopDropdownOpen(null);
+                  }}
+                >
                   {lang === "ar" ? "كل المنتجات" : "All Products"}
                 </Link>
                 {productCategories.map((cat) => {
@@ -377,7 +401,15 @@ export default function Navbar() {
           </div>
           {categories.length > 0 && (
             <div className={`${styles.dropdownMenu} ${desktopDropdownOpen === "blog" ? styles.dropdownMenuOpen : ""}`} style={dropdownMenuStyle}>
-              <Link href="/blog" className={styles.dropdownItem} style={linkCustomStyle} onClick={() => setDesktopDropdownOpen(null)}>
+              <Link
+                href="/blog"
+                className={styles.dropdownItem}
+                style={linkCustomStyle}
+                onClick={() => {
+                  setSearchQuery("");
+                  setDesktopDropdownOpen(null);
+                }}
+              >
                 {lang === "ar" ? "كل المقالات" : "All Posts"}
               </Link>
               {categories.map((cat) => {
@@ -605,6 +637,11 @@ export default function Navbar() {
     tools: toolsBlock,
   };
 
+  const logoIndex = navbarOrder.indexOf("logo");
+  const isLogoCentered = logoIndex > 0 && logoIndex < navbarOrder.length - 1;
+  const startKeys = isLogoCentered ? navbarOrder.slice(0, logoIndex) : [];
+  const endKeys = isLogoCentered ? navbarOrder.slice(logoIndex + 1) : [];
+
   return (
     <>
       <header
@@ -612,10 +649,29 @@ export default function Navbar() {
         className={`${styles.header} ${!navbarSticky ? styles.navbarRelative : ''} ${styles[`layout_${navbarLayout}`]} ${styles[`theme_${navbarTheme}`]} ${scrolled ? styles.scrolled : ""} ${lang === "ar" ? styles.rtl : styles.ltr}`}
         style={headerInlineStyle}
       >
-        <div ref={containerRef} className={styles.container}>
-          {navbarOrder.map((key) => (
-            <React.Fragment key={key}>{navBlocks[key] ?? null}</React.Fragment>
-          ))}
+        <div
+          ref={containerRef}
+          className={`${styles.container} ${isLogoCentered ? styles.containerCentered : ""}`}
+        >
+          {isLogoCentered ? (
+            <>
+              <div className={styles.navClusterStart}>
+                {startKeys.map((key) => (
+                  <React.Fragment key={key}>{navBlocks[key] ?? null}</React.Fragment>
+                ))}
+              </div>
+              <div className={styles.navLogoCenter}>{logoBlock}</div>
+              <div className={styles.navClusterEnd}>
+                {endKeys.map((key) => (
+                  <React.Fragment key={key}>{navBlocks[key] ?? null}</React.Fragment>
+                ))}
+              </div>
+            </>
+          ) : (
+            navbarOrder.map((key) => (
+              <React.Fragment key={key}>{navBlocks[key] ?? null}</React.Fragment>
+            ))
+          )}
         </div>
 
         {/* Mobile Dropdown Drawer (attached directly below navbar when excessLinksMode is 'dropdown') */}

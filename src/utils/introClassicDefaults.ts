@@ -101,13 +101,18 @@ export function getClassicHeroChrome(
   const showImage = Boolean(resolvedImageUrl);
 
   const resolvedButtonText =
-    buttonFromConfig || (config.showButton !== false ? (slideMeta?.link ? (lang === "ar" ? "عرض التفاصيل" : "View Details") : defaults.buttonText) : "");
+    buttonFromConfig ||
+    (config.showButton !== false && slideMeta?.link
+      ? lang === "ar"
+        ? "عرض التفاصيل"
+        : "View Details"
+      : "");
 
   const showSecondaryButton = config.showSecondaryButton === true && Boolean(secondaryButtonFromConfig);
   const secondaryButtonLink = (config.secondaryButtonLink && config.secondaryButtonLink.trim()) || "#";
 
   return {
-    badge: badgeFromConfig || slideMeta?.badge || (config.showBadge !== false ? defaults.badge : ""),
+    badge: badgeFromConfig || slideMeta?.badge || "",
     badgeBg: (config.badgeBg && config.badgeBg.trim()) || undefined,
     badgeTextColor: (config.badgeTextColor && config.badgeTextColor.trim()) || undefined,
     showBadge: config.showBadge !== false,
@@ -128,6 +133,6 @@ export function getClassicHeroChrome(
     showPrice: (slideMeta?.price != null) ? (config.showPrice !== false) : config.showPrice === true,
     price: slideMeta?.price ?? config.price ?? defaults.price,
     originalPrice: slideMeta?.originalPrice ?? config.originalPrice ?? defaults.originalPrice,
-    discountLabel: slideMeta?.discountLabel || config.discountLabel || defaults.discountLabel,
+    discountLabel: slideMeta?.discountLabel || (config.discountLabel && config.discountLabel.trim()) || undefined,
   };
 }
