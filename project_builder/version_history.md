@@ -143,3 +143,4 @@
 | 2026-11-18 17:38:17 | **DOMANSY** | `default` | 1.10.2 | 15 | `claent-site` | 💻 تشغيل محلي (Local Serve) | ✅ ناجح |
 | 2026-11-23 19:52:58 | **TANTEST** | `default` | 1.10.2 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-23 19:56:36 | **TANTEST** | `sokon` | 1.10.2 | 15 | `sokon-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-23 20:13:30 | **TANTEST** | `sokon` | 1.10.2 | 15 | `sokon-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
