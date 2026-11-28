@@ -2,6 +2,7 @@
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
   width: 100%;
   z-index: 100;
   transition: all var(--transition-smooth) ease;
@@ -106,7 +107,7 @@
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 0.55rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -155,7 +156,7 @@
 }
 
 .logoImage {
-  height: clamp(42px, 36px + 1.2vh, 60px);
+  height: clamp(46px, 42px + 1.2vh, 58px);
   width: auto;
   max-width: 220px;
   object-fit: contain;
@@ -231,7 +232,7 @@
 }
 
 .navLink {
-  font-size: 0.78rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--fg);
   text-decoration: none;

@@ -144,3 +144,10 @@
 | 2026-11-23 19:52:58 | **TANTEST** | `default` | 1.10.2 | 15 | `tantest-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-23 19:56:36 | **TANTEST** | `sokon` | 1.10.2 | 15 | `sokon-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
 | 2026-11-23 20:13:30 | **TANTEST** | `sokon` | 1.10.2 | 15 | `sokon-website` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-27 19:14:35 | **UAT** | `default` | 1.10.3 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:03:04 | **UAT** | `default` | 1.10.3 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:07:30 | **DOMANSY** | `default` | 1.10.3 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:17:36 | **UAT** | `default` | 1.10.3 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:18:58 | **UAT** | `default` | 1.10.3 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:21:09 | **UAT** | `default` | 1.10.3 | 15 | `delta-demo-website-deltastore` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
+| 2026-11-28 18:38:45 | **DOMANSY** | `default` | 1.10.3 | 15 | `claent-site` | 🚀 رفع للاستضافة (Firebase Deploy) | ✅ ناجح |
